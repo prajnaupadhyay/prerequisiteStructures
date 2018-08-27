@@ -8,7 +8,7 @@ import java.util.Set;
 import com.google.common.graph.*;
 
 /**
- * class to parallelize the random walks. A single walk of 100 steps is computed by each therad. 
+ * class to parallelize the random walks. A single walk of 100 steps is computed by each thread. 
  * @author pearl
  *
  */
