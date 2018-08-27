@@ -5,11 +5,16 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
 
+/**
+ * class to parallelize the random walks. A single walk of 100 steps is computed by each therad. 
+ * @author pearl
+ *
+ */
 public class TaskRandomSelect implements Runnable
 {
-	AdjListCompact a;
+	AdjListCompact a; // This graph is the adjacency list where there is an edge between nodes 'a' and 'b' there exists a meta-path (given as input) from a to b.  At each step, it randomly selects a neighbor for a node. 
 	int walklength;
-	HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk;
+	HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk; // stores the walks that have been generated till now
 	int node;
 	
 	public TaskRandomSelect(AdjListCompact a, int walklength, HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk, int node)

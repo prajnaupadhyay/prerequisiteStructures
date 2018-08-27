@@ -642,8 +642,8 @@ public class Aspect
 	}
 	
 	/**
-	 * test module to check code on hpc
-	 * @param kb
+	 * test module to check code on hpc. Here the random number generation is replaced by estimating the nodes at a step given a starting node. Not complete
+	 * @param kb: knowledge graph used for meta-path2vec
 	 * @param outfile
 	 * @param folder
 	 * @param relmap
@@ -711,6 +711,15 @@ public class Aspect
 		bw.close();
 		
 	}
+	
+	/**
+	 * test module to check the parallelized version of randomw walks which selects each neighbor randomly
+	 * @param kb
+	 * @param outfile
+	 * @param folder
+	 * @param relmap
+	 * @throws Exception
+	 */
 	
 	public void randomWalkMasterHPC(String kb, String outfile, String folder, String relmap) throws Exception
 	{
@@ -786,6 +795,14 @@ public class Aspect
 		bw1.close();*/
 		
 	}
+	
+	/**
+	 * test module to do random walks on TeKnowbase
+	 * @param kb
+	 * @param outfile
+	 * @param folder
+	 * @throws Exception
+	 */
 	
 	public void randomWalkMaster(String kb, String outfile, String folder) throws Exception
 	{

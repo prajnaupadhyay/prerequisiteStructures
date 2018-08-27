@@ -4,13 +4,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
+/**
+ * class to parallelize the random walk from a node for a given meta-path
+ * @author pearl
+ *
+ */
 public class TaskRandomWalk implements Runnable
 {
 	int node;
 	ArrayList<Integer> path;
-	AdjListCompact a;
+	AdjListCompact a; // this is the original dbpedia graph.
 	int walklength;
-	HashMap<Integer, String> randomwalk;
+	HashMap<Integer, String> randomwalk; // stores the randomwalk as string
 	HashMap<Long, Set<Integer>> h;
 	
 	public TaskRandomWalk(int node, ArrayList<Integer> path, AdjListCompact a, int walklength, HashMap<Long, Set<Integer>> h, HashMap<Integer, String> randomwalk)

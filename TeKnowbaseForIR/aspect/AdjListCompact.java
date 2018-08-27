@@ -18,15 +18,21 @@ import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 
+/**
+ * class that represents a graph
+ * @author pearl
+ *
+ */
+
 public class AdjListCompact 
 {
-	ImmutableValueGraph<Integer, Integer> labeledGraph;
-	HashMap<Integer, Integer> inverses;
-	HashMap<String, Integer> relmap;
-	HashMap<Long, Set<Integer>> pairAdjList;
-	ImmutableValueGraph<Integer, Integer> pathGraph;
-	ImmutableValueGraph<Integer, Integer> pathGraph_inverse;
-	HashMap<Integer, Set<EndpointPair>> relIndex;
+	ImmutableValueGraph<Integer, Integer> labeledGraph; // graph stored as ImmutableValueGraph from Guava library
+	HashMap<Integer, Integer> inverses; // maps each relationship to its inverse relationship. Used when the reverse of a given meta-path has to be found
+	HashMap<String, Integer> relmap; // mapping of relationship names to their ids
+	HashMap<Long, Set<Integer>> pairAdjList; // index on node and edge lable pair to the set of nodes reachable by traversing that edge label from the node
+	ImmutableValueGraph<Integer, Integer> pathGraph; // graph where the nodes are the nodes edges exist between the two nodes if they are relared by a meta-path
+	ImmutableValueGraph<Integer, Integer> pathGraph_inverse; // graph trepresenting the transpose of pathGraph
+	HashMap<Integer, Set<EndpointPair>> relIndex; // index of the edge label to node pairs that participate in a relation described by the edge label
 	
 	public AdjListCompact(ImmutableValueGraph<Integer, Integer> labeledGraph)
 	{
@@ -150,6 +156,14 @@ public class AdjListCompact
 		//bw.close();
 		
 	}
+	/**
+	 * 
+	 * @param path: meta-path
+	 * @param index: the current edge label used for retrieving the neighbors
+	 * @param node: node whose neighbors for edge label indicated by 'index'
+	 * @param h: index to store the set of reachable nodes from node and edge label represented by index
+	 * @return
+	 */
 	
 	public int randomWalk(ArrayList<Integer> path, int index, int node, HashMap<Long, Set<Integer>> h)
 	{
@@ -190,7 +204,7 @@ public class AdjListCompact
 	}
 	
 	/**
-	 * creates indexes of relations to pairs of nodes that participate in that relation
+	 * creates indexes of relations to pairs of nodes that participate in that relation given a meta-path
 	 * @param path
 	 */
 	
@@ -231,8 +245,8 @@ public class AdjListCompact
 	}
 	
 	/**
-	 * given a path as an integer sequence, it generates an adjacency list for the same
-	 * @param path
+	 * given a path as an integer sequence, it generates an adjacency list for the same. The nodes are from the graph and there is an edge from node a to node b if there is a meta-path connecting them
+	 * @param path: the meta-path
 	 */
 	
 	public void createIndexPathMaster(ArrayList<Integer> path)
@@ -265,6 +279,13 @@ public class AdjListCompact
 		
 	}
 	
+	/**
+	 * returns the set of nodes reachable from a set h1 of nodes and edge label indicated by p
+	 * @param h1: set of nodes from which the reachable nodes have to be returned
+	 * @param p: edge label
+	 * @return
+	 */
+	
 	public HashSet<Integer> getNeighList(HashSet<Integer> h1, int p)
 	{
 		HashSet<Integer> allNeighs = new HashSet<Integer>();
@@ -278,7 +299,11 @@ public class AdjListCompact
 		return allNeighs;
 	}
 	
-	
+	/**
+	 * Given a meta-path sequence indicated by a, returns another meta-path that represents its inverse. For example, "type application" becomes "application_inverse type_inverse"
+	 * @param a
+	 * @return
+	 */
 	
 	public ArrayList<Integer> inverse(ArrayList<Integer> a)
 	{
