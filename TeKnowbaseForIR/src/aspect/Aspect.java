@@ -641,6 +641,27 @@ public class Aspect
 		
 	}
 	
+	public void randomWalkMasterHPC3(String kb, String outfile, String folder, String relmap) throws Exception
+	{
+		long startTime = System.nanoTime();
+		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		long endTime = System.nanoTime();
+		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
+		ArrayList<Integer> path = new ArrayList<Integer>();
+		path.add(1);
+		path.add(36);
+		
+		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		
+		
+		a.createIndexPathMasterAlternate(path);
+		
+		long endTime2 = System.nanoTime();
+		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
+		
+	}
+	
 	/**
 	 * test module to check code on hpc. Here the random number generation is replaced by estimating the nodes at a step given a starting node. Not complete
 	 * @param kb: knowledge graph used for meta-path2vec

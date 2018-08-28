@@ -135,7 +135,6 @@ public class AdjListCompact
 			HashMap<Integer, String> randomwalk = new HashMap<Integer, String>();
 			for(int i=0;i<numwalks;i++)
 			{
-				
 				TaskRandomWalk t1 = new TaskRandomWalk(s, path, this, walklength, h, randomwalk);
 				executor.execute(t1);
 			}
