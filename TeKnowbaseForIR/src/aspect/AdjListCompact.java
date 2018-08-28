@@ -29,9 +29,9 @@ public class AdjListCompact
 	ImmutableValueGraph<Integer, Integer> labeledGraph; // graph stored as ImmutableValueGraph from Guava library
 	HashMap<Integer, Integer> inverses; // maps each relationship to its inverse relationship. Used when the reverse of a given meta-path has to be found
 	HashMap<String, Integer> relmap; // mapping of relationship names to their ids
-	HashMap<Long, Set<Integer>> pairAdjList; // index on node and edge lable pair to the set of nodes reachable by traversing that edge label from the node
-	ImmutableValueGraph<Integer, Integer> pathGraph; // graph where the nodes are the nodes edges exist between the two nodes if they are relared by a meta-path
-	ImmutableValueGraph<Integer, Integer> pathGraph_inverse; // graph trepresenting the transpose of pathGraph
+	HashMap<Long, Set<Integer>> pairAdjList; // index on node and edge label pair to the set of nodes reachable by traversing that edge label from the node
+	ImmutableValueGraph<Integer, Integer> pathGraph; // graph where the nodes are the nodes edges exist between the two nodes if they are related by a meta-path
+	ImmutableValueGraph<Integer, Integer> pathGraph_inverse; // graph representing the transpose of pathGrapt
 	HashMap<Integer, Set<EndpointPair>> relIndex; // index of the edge label to node pairs that participate in a relation described by the edge label
 	
 	public AdjListCompact(ImmutableValueGraph<Integer, Integer> labeledGraph)
@@ -156,6 +156,45 @@ public class AdjListCompact
 		//bw.close();
 		
 	}
+	
+	/**
+	 * Same as above, but parallelizes the computation of random walks over the nodes
+	 * @param path
+	 * @param numwalks
+	 * @param walklength
+	 * @param bw
+	 * @param h
+	 */
+	
+	public void generateRandomWalksAlternate(int numwalks, int walklength) throws Exception
+	{
+		int num_threads = (Runtime.getRuntime().availableProcessors()+1)/2; 
+		int nn = pathGraph.nodes().size();
+		int count=0;
+		
+		ThreadPoolExecutor executor = new ThreadPoolExecutor(num_threads, nn, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(nn));
+		HashMap<Integer, int[][]> randomwalk = new HashMap<Integer, int[][]>();
+
+		for(int n:this.pathGraph.nodes())
+		{
+			Set<Integer> s = this.pathGraph.successors(n);
+			if(s.size()==0) continue;
+			count++;
+			
+			if(count%100==0)
+			{
+				System.out.println(count);
+			}
+			
+			TaskRandomWalkAlternate t1 = new TaskRandomWalkAlternate(n,this,walklength,numwalks,randomwalk);
+			executor.execute(t1);
+			
+		}
+		executor.shutdown();
+		executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+		
+	}
+	
 	/**
 	 * 
 	 * @param path: meta-path

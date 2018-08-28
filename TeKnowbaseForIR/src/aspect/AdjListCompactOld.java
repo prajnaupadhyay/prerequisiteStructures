@@ -89,10 +89,7 @@ public class AdjListCompactOld {
 		
 	}
 	
-	public void generateRandomWalksAlternate(ArrayList<String> path, int numwalks, int walklength, BufferedWriter bw, HashMap<String, HashMap<String, Set<String>>> h)
-	{
-		
-	}
+	
 	
 	
 	

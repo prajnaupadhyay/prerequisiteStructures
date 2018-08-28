@@ -659,7 +659,7 @@ public class Aspect
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
 		ArrayList<Integer> path = new ArrayList<Integer>();
 		path.add(1);
-		path.add(156);
+		path.add(36);
 		
 		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
 		
@@ -713,7 +713,35 @@ public class Aspect
 	}
 	
 	/**
-	 * test module to check the parallelized version of randomw walks which selects each neighbor randomly
+	 * test module for random walks where they are parallelized across nodes in a graph instead of parallelizing the 'numwalks' walks
+	 * @param kb
+	 * @param outfile
+	 * @param folder
+	 * @param relmap
+	 * @throws Exception
+	 */
+	
+	public void randomWalkMasterHPC2(String kb, String outfile, String folder, String relmap) throws Exception
+	{
+		long startTime = System.nanoTime();
+		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		long endTime = System.nanoTime();
+		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
+		ArrayList<Integer> path = new ArrayList<Integer>();
+		path.add(1);
+		path.add(36);
+		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		
+		a.createIndexPathMasterAlternate(path);
+		
+		long endTime2 = System.nanoTime();
+		System.out.println("indexes on meta-path created, time taken = "+(endTime2 - endTime)/1000000000);
+		a.generateRandomWalksAlternate(1000, 100);
+	}
+	
+	/**
+	 * test module to check the parallelized version of random walks which selects each neighbor randomly. Uses the meta-path adjacency list to choose a neighbor, instaed of selecting a neighbor related via each relation of meta-path
 	 * @param kb
 	 * @param outfile
 	 * @param folder
@@ -741,6 +769,8 @@ public class Aspect
 	//	Random r = new Random();
 		int count=0;
 		System.out.println(a.pathGraph.nodes().size());
+		HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk = new HashMap<Integer, ArrayList<ArrayList<Integer>>>();
+
 		for(int n:a.pathGraph.nodes())
 		{
 			Set<Integer> s = a.pathGraph.successors(n);
@@ -754,8 +784,7 @@ public class Aspect
 			int nn = 1000;
 			ThreadPoolExecutor executor = new ThreadPoolExecutor(num_threads,
 					nn, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(nn));
-			HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk = new HashMap<Integer, ArrayList<ArrayList<Integer>>>();
-			//int[][] rws = new int[1000][100];
+						//int[][] rws = new int[1000][100];
 			for(int num=0;num<1000;num++)
 			{
 				
@@ -890,7 +919,7 @@ public class Aspect
 		GetPropertyValues properties = new GetPropertyValues();
 		HashMap<String, String> hm = properties.getPropValues();
 		Aspect a = new Aspect();
-		a.randomWalkMasterHPC(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"),hm.get("relmap"));
+		a.randomWalkMasterHPC(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"));
 		//readGraphEfficient(hm.get("dbpedia"));
 		//extractImportantPaths(hm.get("parent-folder"), hm.get("outfile"));
 		//insert_statement(hm.get("freebase-postprocessed"),"freebase_facts");
