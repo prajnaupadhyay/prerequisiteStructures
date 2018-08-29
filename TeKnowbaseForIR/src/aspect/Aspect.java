@@ -642,7 +642,7 @@ public class Aspect
 	}
 	
 	/**
-	 * estimates nodes at step j given the source neighbors at step j-1
+	 * estimates nodes at step j given the source neighbours at step j-1
 	 * @param j
 	 * @param source
 	 * @param a
@@ -665,7 +665,7 @@ public class Aspect
 				int cc = ll.get(nn);
 				for(int i=0;i<n1;i++)
 				{
-					temp = source.get(n).get(i);
+					temp = source.get(n).get((nn*n1)+i);
 					rws[temp][j]=cc;
 				}
 			}
@@ -731,18 +731,24 @@ public class Aspect
 		
 		long endTime2 = System.nanoTime();
 		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
-		//BufferedWriter bw = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/random_walk_3"));
+		BufferedWriter bw = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/random_walk_4"));
 	//	Random r = new Random();
 		int count=0;
 		System.out.println(a.pathGraph.nodes().size());
 		for(int n:a.pathGraph.nodes())
 		{
-			
 			int[][] rws = new int[1000][100];
 			Set<Integer> s = a.pathGraph.successors(n);
 			ArrayList<Integer> ll = new ArrayList<Integer>(s);
 			if(s.size()==0) continue;
+			System.out.println("node: "+n+", neighbor size: "+ll.size());
+			
+			//	System.out.println("neighbour: "+ll);
+			
+			//System.out.println("\n");
 			count++;
+			//if(count==100) break;
+			
 			if(count%100==0)
 			{
 				System.out.println(count);
@@ -769,25 +775,28 @@ public class Aspect
 						source.put(rws[i][j-1], indexlist);
 					}
 				}
+				//System.out.println("unique nodes at step "+j+": "+source.keySet());
 				if(j % 2==0)
-				{
-					estimateNeighborsAtIndex1(j,source,a,rws,a.pathGraph);
-				}
-				else if(j%2==1)
 				{
 					estimateNeighborsAtIndex1(j,source,a,rws,a.pathGraph_inverse);
 				}
+				else if(j%2==1)
+				{
+					estimateNeighborsAtIndex1(j,source,a,rws,a.pathGraph);
+				}
 			}
-			/*for(int[] i:rws)
+			
+			for(int[] i:rws)
 			{
 				for(int j:i)
 				{
 					bw.write(j+" ");
 				}
 				bw.write("\n");
-			}*/
+			}
+				
 		}
-		//bw.close();
+		bw.close();
 		
 	}
 	

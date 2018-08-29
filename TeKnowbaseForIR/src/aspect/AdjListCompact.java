@@ -18,6 +18,7 @@ import com.google.common.graph.MutableValueGraph;
 import com.google.common.graph.ValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 
+import java.io.*;
 /**
  * class that represents a graph
  * @author pearl
@@ -243,11 +244,12 @@ public class AdjListCompact
 	}
 	
 	/**
-	 * creates indexes of relations to pairs of nodes that participate in that relation given a meta-path
-	 * @param path
+	 * creates the adjacency list for a meta-path.
+	 * @param path: meta-path
+	 * @throws Exception
 	 */
 	
-	public void createIndexPathMasterAlternate(ArrayList<Integer> path)
+	public void createIndexPathMasterAlternate(ArrayList<Integer> path) throws Exception
 	{
 		MutableValueGraph<Integer, Integer> pathGraph = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 		MutableValueGraph<Integer, Integer> pathGraph_reverse = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
@@ -279,8 +281,21 @@ public class AdjListCompact
 			}
 		}
 		this.pathGraph = ImmutableValueGraph.copyOf(pathGraph);
-		
 		this.pathGraph_inverse = ImmutableValueGraph.copyOf(pathGraph_reverse);
+		BufferedWriter bw1 = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/pathGraph_nodes"));
+		for(int n:pathGraph.nodes())
+		{
+			bw1.write(n+"\n");
+		}
+		
+		BufferedWriter bw2 = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/pathGraphReverse_nodes"));
+		for(int n:pathGraph_inverse.nodes())
+		{
+			bw2.write(n+"\n");
+		}
+		bw1.close();
+		bw2.close();
+		
 	}
 	
 	/**
