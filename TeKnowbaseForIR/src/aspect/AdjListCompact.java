@@ -178,15 +178,16 @@ public class AdjListCompact
 		{
 			Set<Integer> s = this.pathGraph.successors(n);
 			if(s.size()==0) continue;
+			
+			
+			TaskRandomWalkAlternate t1 = new TaskRandomWalkAlternate(n,this,walklength,numwalks,randomwalk);
+			executor.execute(t1);
 			count++;
 			
 			if(count%100==0)
 			{
 				System.out.println(count);
 			}
-			
-			TaskRandomWalkAlternate t1 = new TaskRandomWalkAlternate(n,this,walklength,numwalks,randomwalk);
-			executor.execute(t1);
 			
 		}
 		executor.shutdown();

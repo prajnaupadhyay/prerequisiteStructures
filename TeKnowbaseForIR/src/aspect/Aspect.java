@@ -608,14 +608,14 @@ public class Aspect
 	}
 	
 	/**
-	 * for an index j and j+1, instead of random walk, it assigns the array values based on the expectation of visiting the neighbours of node n
+	 * for an index j, instead of random walk, it assigns the array values based on the expectation of visiting the neighbours of node n
 	 * @param j
 	 * @param node
 	 * @param a
 	 * @param rws
 	 */
 	
-	public void randomwalkAlternate(int j, int node, AdjListCompact a, int[][] rws, ImmutableValueGraph pathgraph)
+	public void estimateNeighborsAtIndex(int j, int node, AdjListCompact a, int[][] rws, ImmutableValueGraph pathgraph)
 	{
 		Set<Integer> s1 = pathgraph.successors(node);
 		ArrayList<Integer> ll = new ArrayList<Integer>(s1);
@@ -641,6 +641,47 @@ public class Aspect
 		
 	}
 	
+	/**
+	 * estimates nodes at step j given the source neighbors at step j-1
+	 * @param j
+	 * @param source
+	 * @param a
+	 * @param rws
+	 * @param pathgraph
+	 */
+	
+	public void estimateNeighborsAtIndex1(int j, HashMap<Integer, ArrayList<Integer>> source, AdjListCompact a, int[][] rws, ImmutableValueGraph pathgraph)
+	{
+		for(int n:source.keySet())
+		{
+			Set<Integer> s1 = pathgraph.successors(n);
+			ArrayList<Integer> ll = new ArrayList<Integer>(s1);
+			if(s1.size()==0) return;
+			int n1 = source.get(n).size()/s1.size();
+			int n2 = source.get(n).size() % s1.size();
+			int temp=0;
+			for(int nn=0;nn<s1.size();nn++)
+			{
+				int cc = ll.get(nn);
+				for(int i=0;i<n1;i++)
+				{
+					temp = source.get(n).get(i);
+					rws[temp][j]=cc;
+				}
+			}
+			Random rr = new Random();
+			for(int i=n1*s1.size();i<source.get(n).size();i++)
+			{
+				int r = rr.nextInt(s1.size());
+				temp = source.get(n).get(i);
+				rws[temp][j]=ll.get(r);
+			} 
+			
+		}
+	}
+	
+	
+	
 	public void randomWalkMasterHPC3(String kb, String outfile, String folder, String relmap) throws Exception
 	{
 		long startTime = System.nanoTime();
@@ -659,6 +700,7 @@ public class Aspect
 		
 		long endTime2 = System.nanoTime();
 		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
+		
 		
 	}
 	
@@ -689,7 +731,7 @@ public class Aspect
 		
 		long endTime2 = System.nanoTime();
 		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
-		BufferedWriter bw = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/random_walk_3"));
+		//BufferedWriter bw = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/random_walk_3"));
 	//	Random r = new Random();
 		int count=0;
 		System.out.println(a.pathGraph.nodes().size());
@@ -711,25 +753,41 @@ public class Aspect
 			}
 			for(int j=1;j<100;j=j+1)
 			{
+				HashMap<Integer, ArrayList<Integer>> source = new HashMap<Integer, ArrayList<Integer>>();
+				for(int i=0;i<1000;i++)
+				{
+					if(source.get(rws[i][j-1])==null)
+					{
+						ArrayList<Integer> indexlist = new ArrayList<Integer>();
+						indexlist.add(i);
+						source.put(rws[i][j-1], indexlist);
+					}
+					else
+					{
+						ArrayList<Integer> indexlist = source.get(rws[i][j-1]);
+						indexlist.add(i);
+						source.put(rws[i][j-1], indexlist);
+					}
+				}
 				if(j % 2==0)
 				{
-					randomwalkAlternate(j,n,a,rws,a.pathGraph);
+					estimateNeighborsAtIndex1(j,source,a,rws,a.pathGraph);
 				}
 				else if(j%2==1)
 				{
-					randomwalkAlternate(j,n,a,rws,a.pathGraph_inverse);
+					estimateNeighborsAtIndex1(j,source,a,rws,a.pathGraph_inverse);
 				}
 			}
-			for(int[] i:rws)
+			/*for(int[] i:rws)
 			{
 				for(int j:i)
 				{
 					bw.write(j+" ");
 				}
 				bw.write("\n");
-			}
+			}*/
 		}
-		bw.close();
+		//bw.close();
 		
 	}
 	
@@ -940,7 +998,7 @@ public class Aspect
 		GetPropertyValues properties = new GetPropertyValues();
 		HashMap<String, String> hm = properties.getPropValues();
 		Aspect a = new Aspect();
-		a.randomWalkMasterHPC(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"));
+		a.randomWalkMasterHPC1(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"));
 		//readGraphEfficient(hm.get("dbpedia"));
 		//extractImportantPaths(hm.get("parent-folder"), hm.get("outfile"));
 		//insert_statement(hm.get("freebase-postprocessed"),"freebase_facts");
