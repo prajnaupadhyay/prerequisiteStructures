@@ -34,7 +34,7 @@ public class TaskRandomSelect implements Runnable
 		ArrayList<Integer> randomwalk1 = new ArrayList<Integer>();
 		randomwalk1.add(node);
 		Set<Integer> ss = a.pathGraph.successors(node);
-		for(int j=1;j<walklength;j=j+2)
+		for(int j=2;j<walklength;j=j+2)
 		{
 			ArrayList<Integer> al = new ArrayList<Integer>(ss);
 			int i = r.nextInt(al.size());

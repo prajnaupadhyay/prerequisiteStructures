@@ -282,7 +282,7 @@ public class AdjListCompact
 		}
 		this.pathGraph = ImmutableValueGraph.copyOf(pathGraph);
 		this.pathGraph_inverse = ImmutableValueGraph.copyOf(pathGraph_reverse);
-		BufferedWriter bw1 = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/pathGraph_nodes"));
+		/*//BufferedWriter bw1 = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/pathGraph_nodes"));
 		for(int n:pathGraph.nodes())
 		{
 			bw1.write(n+"\n");
@@ -294,7 +294,7 @@ public class AdjListCompact
 			bw2.write(n+"\n");
 		}
 		bw1.close();
-		bw2.close();
+		bw2.close();*/
 		
 	}
 	

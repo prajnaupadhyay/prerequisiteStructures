@@ -1,5 +1,7 @@
 package aspect;
 
+
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -680,8 +682,7 @@ public class Aspect
 		}
 	}
 	
-	
-	
+
 	public void randomWalkMasterHPC3(String kb, String outfile, String folder, String relmap) throws Exception
 	{
 		long startTime = System.nanoTime();
@@ -694,13 +695,47 @@ public class Aspect
 		path.add(36);
 		
 		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
-		
-		
 		a.createIndexPathMasterAlternate(path);
 		
 		long endTime2 = System.nanoTime();
-		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
+		System.out.println("path adjacency list made, time taken = "+(endTime2 - endTime)/1000000000);
 		
+		int count=0;
+		System.out.println(a.pathGraph.nodes().size());
+		
+		for(int n:a.pathGraph.nodes())
+		{
+			int[][] rws = new int[1000][100];
+			Set<Integer> s = a.pathGraph.successors(n);
+			if(s.size()==0) continue;
+			for(int i=0;i<1000;i++)
+			{
+				rws[i][0]=n;
+			}
+			count++;
+			if(count%100==0)
+			{
+				System.out.println(count);
+			}
+			HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk = new HashMap<Integer, ArrayList<ArrayList<Integer>>>();
+			estimateNeighborsAtIndex(1,n,a,rws,a.pathGraph);
+			int num_threads = Runtime.getRuntime().availableProcessors(); 
+			int nn = 1000;
+			ThreadPoolExecutor executor = new ThreadPoolExecutor(num_threads,
+					nn, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(nn));
+			
+			for(int num=0;num<1000;num++)
+			{
+				TaskRandomSelect t1 = new TaskRandomSelect(a, 100, randomwalk, rws[num][1]);
+				executor.execute(t1);
+			}
+			executor.shutdown();
+			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+		}
+		for(int i1=2;i1<100;i1++)
+		{
+			
+		}
 		
 	}
 	
@@ -726,12 +761,11 @@ public class Aspect
 		
 		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
 		
-		
 		a.createIndexPathMasterAlternate(path);
 		
 		long endTime2 = System.nanoTime();
 		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
-		BufferedWriter bw = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/random_walk_4"));
+		//BufferedWriter bw = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/random_walk_4"));
 	//	Random r = new Random();
 		int count=0;
 		System.out.println(a.pathGraph.nodes().size());
@@ -741,7 +775,7 @@ public class Aspect
 			Set<Integer> s = a.pathGraph.successors(n);
 			ArrayList<Integer> ll = new ArrayList<Integer>(s);
 			if(s.size()==0) continue;
-			System.out.println("node: "+n+", neighbor size: "+ll.size());
+		//	System.out.println("node: "+n+", neighbor size: "+ll.size());
 			
 			//	System.out.println("neighbour: "+ll);
 			
@@ -778,27 +812,30 @@ public class Aspect
 				//System.out.println("unique nodes at step "+j+": "+source.keySet());
 				if(j % 2==0)
 				{
-					estimateNeighborsAtIndex1(j,source,a,rws,a.pathGraph_inverse);
+					//estimateNeighborsAtIndex1(j,source,a,rws,a.pathGraph_inverse);
+					estimateNeighborsAtIndex(j,n,a,rws,a.pathGraph_inverse);
 				}
 				else if(j%2==1)
 				{
-					estimateNeighborsAtIndex1(j,source,a,rws,a.pathGraph);
+					//estimateNeighborsAtIndex1(j,source,a,rws,a.pathGraph);
+					estimateNeighborsAtIndex(j,n,a,rws,a.pathGraph_inverse);
 				}
 			}
 			
-			for(int[] i:rws)
+			/*for(int[] i:rws)
 			{
 				for(int j:i)
 				{
 					bw.write(j+" ");
 				}
 				bw.write("\n");
-			}
+			}*/
 				
 		}
-		bw.close();
+		//bw.close();
 		
 	}
+
 	
 	/**
 	 * test module for random walks where they are parallelized across nodes in a graph instead of parallelizing the 'numwalks' walks
