@@ -643,6 +643,8 @@ public class Aspect
 		
 	}
 	
+	
+	
 	/**
 	 * estimates nodes at step j given the source neighbours at step j-1
 	 * @param j
@@ -680,6 +682,85 @@ public class Aspect
 			} 
 			
 		}
+	}
+	
+	public void randomWalkMaster5(String kb, String outfile, String folder, String relmap) throws Exception
+	{
+		
+	}
+	
+	/**
+	 * computes the 1000*100 matrix by round-robin fashion. for each node, maintains an index of the last element chosen from its set of neighbors. increments it modulo the size of its neighbors at each step 
+	 * @param kb
+	 * @param outfile
+	 * @param folder
+	 * @param relmap
+	 * @throws Exception
+	 */
+	
+	public void randomWalkMasterHPC4(String kb, String outfile, String folder, String relmap) throws Exception
+	{
+		long startTime = System.nanoTime();
+		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		long endTime = System.nanoTime();
+		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
+		ArrayList<Integer> path = new ArrayList<Integer>();
+		path.add(4);
+		path.add(12);
+		
+		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		a.createIndexPathMasterAlternate(path);
+		
+		long endTime2 = System.nanoTime();
+		System.out.println("path adjacency list made, time taken = "+(endTime2 - endTime)/1000000000);
+		
+		int count=0;
+		System.out.println(a.pathGraph.nodes().size());
+		for(int n:a.pathGraph.nodes())
+		{
+			int[][] rws = new int[1000][100];
+			Set<Integer> s = a.pathGraph.successors(n);
+			if(s.size()==0) continue;
+			for(int i=0;i<1000;i++)
+			{
+				rws[i][0]=n;
+			}
+			count++;
+			if(count%10==0)
+			{
+				System.out.println(count);
+			}
+			HashMap<Integer, Integer> lastIndex = new HashMap<Integer, Integer>();
+			for(int ii=0;ii<1000;ii++)
+			{
+				for(int jj=0;jj<99;jj++)
+				{
+					ArrayList<Integer> s1;
+					if(jj % 2==0)
+					{
+						s1 = new ArrayList<Integer>(a.pathGraph.successors(rws[ii][jj]));
+					}
+					else
+					{
+						s1 = new ArrayList<Integer>(a.pathGraph_inverse.successors(rws[ii][jj]));
+					}
+					if(lastIndex.get(rws[ii][jj])==null)
+					{
+						rws[ii][jj+1]=s1.get(0);
+						lastIndex.put(rws[ii][jj], 0);
+					}
+					else
+					{
+						int ind = (lastIndex.get(rws[ii][jj])+1) % s1.size();
+						rws[ii][jj+1] = s1.get(ind);
+						lastIndex.put(rws[ii][jj], ind);
+					}
+					//rws[ii][jj]=0;
+				}
+			}
+		}
+		
 	}
 	
 	/**
@@ -1062,7 +1143,7 @@ public class Aspect
 		GetPropertyValues properties = new GetPropertyValues();
 		HashMap<String, String> hm = properties.getPropValues();
 		Aspect a = new Aspect();
-		a.randomWalkMasterHPC3(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"));
+		a.randomWalkMasterHPC4(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"));
 		//readGraphEfficient(hm.get("dbpedia"));
 		//extractImportantPaths(hm.get("parent-folder"), hm.get("outfile"));
 		//insert_statement(hm.get("freebase-postprocessed"),"freebase_facts");
