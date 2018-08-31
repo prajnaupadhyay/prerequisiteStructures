@@ -16,54 +16,56 @@ public class TaskRandomSelect implements Runnable
 {
 	AdjListCompact a; // This graph is the adjacency list where there is an edge between nodes 'a' and 'b' there exists a meta-path (given as input) from a to b.  At each step, it randomly selects a neighbor for a node. 
 	int walklength;
-	HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk; // stores the walks that have been generated till now
+	String aa;
+	//ArrayList<ArrayList<Integer>> aa;
+	//HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk; // stores the walks that have been generated till now
 	int node;
 	int orgnode;
 	int startindex;
+	HashMap<Integer, String> randomwalk;
 	
-	public TaskRandomSelect(AdjListCompact a, int walklength, HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk, int node, int orgnode, int startindex)
+	public TaskRandomSelect(AdjListCompact a, int walklength, String aa, int node, int orgnode, int startindex, HashMap<Integer, String> randomwalk)
 	{
 		this.a = a;
 		this.walklength=walklength;
-		this.randomwalk = randomwalk;
+		this.aa = aa;
 		this.node = node;
 		this.startindex = startindex;
 		this.orgnode = orgnode;
+		this.randomwalk = randomwalk;
+		
 	}
 	@Override
 	public void run() 
 	{
 		Random r = new Random();
 		// TODO Auto-generated method stub
-		ArrayList<Integer> randomwalk1 = new ArrayList<Integer>();
-	//	randomwalk1.add(node);
-		Set<Integer> ss = a.pathGraph.successors(node);
-		for(int j=startindex;j<walklength;j=j+2)
+		String randomwalk1 = ""+node;
+		//randomwalk1.add(node);
+		ArrayList<Integer> al = a.pathGraphHashmap.get(node);
+		for(int j=startindex;j<walklength-1;j=j+2)
 		{
-			ArrayList<Integer> al = new ArrayList<Integer>(ss);
 			int i = r.nextInt(al.size());
-			randomwalk1.add(al.get(i));
-			ArrayList<Integer> al1 = new ArrayList<Integer>(a.pathGraph_inverse.successors(al.get(i)));
+			//randomwalk1.add(al.get(i));
+			randomwalk1 = randomwalk1 +" "+ al.get(i);
+			ArrayList<Integer> al1 = a.pathGraphHashMapReverse.get(al.get(i));
 			if(al1!=null)
 			{
 				i = r.nextInt(al1.size());
-				randomwalk1.add(al1.get(i));
+				//randomwalk1.add(al1.get(i));
+				randomwalk1 = randomwalk1 + " " + al1.get(i);
 			}
 		}
 		
-		//System.out.println(randomwalk1.size());
+		//System.out.println(randomwalk1);
 		
-		if(randomwalk.get(orgnode)==null)
+		
 		{
-			ArrayList<ArrayList<Integer>> aa = new ArrayList<ArrayList<Integer>>();
-			aa.add(randomwalk1);
-			randomwalk.put(orgnode, aa);
-		}
-		else
-		{
-			ArrayList<ArrayList<Integer>> aa = randomwalk.get(orgnode);
-			aa.add(randomwalk1);
-			randomwalk.put(orgnode, aa);
+			
+			//aa.add(randomwalk1);
+			
+			randomwalk.put(node, randomwalk.get(node)+"\n"+randomwalk1);
+			
 		}
 		
 	}

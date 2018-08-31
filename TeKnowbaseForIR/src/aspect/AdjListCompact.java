@@ -27,12 +27,15 @@ import java.io.*;
 
 public class AdjListCompact 
 {
+	
 	ImmutableValueGraph<Integer, Integer> labeledGraph; // graph stored as ImmutableValueGraph from Guava library
 	HashMap<Integer, Integer> inverses; // maps each relationship to its inverse relationship. Used when the reverse of a given meta-path has to be found
 	HashMap<String, Integer> relmap; // mapping of relationship names to their ids
 	HashMap<Long, Set<Integer>> pairAdjList; // index on node and edge label pair to the set of nodes reachable by traversing that edge label from the node
 	ImmutableValueGraph<Integer, Integer> pathGraph; // graph where the nodes are the nodes edges exist between the two nodes if they are related by a meta-path
 	ImmutableValueGraph<Integer, Integer> pathGraph_inverse; // graph representing the transpose of pathGrapt
+	public HashMap<Integer, ArrayList<Integer>> pathGraphHashmap;
+	public HashMap<Integer, ArrayList<Integer>> pathGraphHashMapReverse;
 	HashMap<Integer, Set<EndpointPair>> relIndex; // index of the edge label to node pairs that participate in a relation described by the edge label
 	
 	public AdjListCompact(ImmutableValueGraph<Integer, Integer> labeledGraph)
@@ -280,8 +283,41 @@ public class AdjListCompact
 				}
 			}
 		}
+		HashMap<Integer, ArrayList<Integer>> hh = new HashMap<Integer, ArrayList<Integer>>();
+		HashMap<Integer, ArrayList<Integer>> hh_inverse = new HashMap<Integer, ArrayList<Integer>>();
 		this.pathGraph = ImmutableValueGraph.copyOf(pathGraph);
 		this.pathGraph_inverse = ImmutableValueGraph.copyOf(pathGraph_reverse);
+		for(EndpointPair pp:pathGraph.edges())
+		{
+			int u = (int) pp.nodeU();
+			int v = (int) pp.nodeV();
+			if(hh.get(u)==null)
+			{
+				ArrayList<Integer> vv = new ArrayList<Integer>();
+				vv.add(v);
+				hh.put(u, vv);
+			}
+			else
+			{
+				ArrayList<Integer> vv = hh.get(u);
+				vv.add(v);
+				hh.put(u, vv);
+			}
+			if(hh_inverse.get(v)==null)
+			{
+				ArrayList<Integer> uu = new ArrayList<Integer>();
+				uu.add(u);
+				hh_inverse.put(v, uu);
+			}
+			else
+			{
+				ArrayList<Integer> uu = hh_inverse.get(v);
+				uu.add(u);
+				hh_inverse.put(v, uu);
+			}
+		}
+		this.pathGraphHashmap=hh;
+		this.pathGraphHashMapReverse = hh_inverse;
 		/*//BufferedWriter bw1 = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/pathGraph_nodes"));
 		for(int n:pathGraph.nodes())
 		{
