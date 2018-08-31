@@ -682,6 +682,15 @@ public class Aspect
 		}
 	}
 	
+	/**
+	 * this module estimates the step 2 neighbors of the randomwalk and does actual random walk for the remaining steps
+	 * @param kb
+	 * @param outfile
+	 * @param folder
+	 * @param relmap
+	 * @throws Exception
+	 */
+	
 
 	public void randomWalkMasterHPC3(String kb, String outfile, String folder, String relmap) throws Exception
 	{
@@ -726,16 +735,25 @@ public class Aspect
 			
 			for(int num=0;num<1000;num++)
 			{
-				TaskRandomSelect t1 = new TaskRandomSelect(a, 100, randomwalk, rws[num][1]);
+				if(a.pathGraph.successors(rws[num][1]).size()==0) continue;
+				TaskRandomSelect t1 = new TaskRandomSelect(a, 100, randomwalk, rws[num][1], n, 2);
 				executor.execute(t1);
 			}
 			executor.shutdown();
 			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+			int ii=0;
+			/*for(ArrayList<Integer> aa:randomwalk.get(n))
+			{
+				int jj=2;
+				for(int aa1:aa)
+				{
+					rws[ii][jj]=aa1;
+					jj++;
+				}
+				ii++;
+			}*/
 		}
-		for(int i1=2;i1<100;i1++)
-		{
-			
-		}
+	
 		
 	}
 	
@@ -913,7 +931,7 @@ public class Aspect
 			for(int num=0;num<1000;num++)
 			{
 				
-				TaskRandomSelect t1 = new TaskRandomSelect(a, 100, randomwalk, n);
+				TaskRandomSelect t1 = new TaskRandomSelect(a, 100, randomwalk, n, n, 0);
 				executor.execute(t1);
 			}
 			executor.shutdown();
@@ -1044,7 +1062,7 @@ public class Aspect
 		GetPropertyValues properties = new GetPropertyValues();
 		HashMap<String, String> hm = properties.getPropValues();
 		Aspect a = new Aspect();
-		a.randomWalkMasterHPC1(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"));
+		a.randomWalkMasterHPC3(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"));
 		//readGraphEfficient(hm.get("dbpedia"));
 		//extractImportantPaths(hm.get("parent-folder"), hm.get("outfile"));
 		//insert_statement(hm.get("freebase-postprocessed"),"freebase_facts");

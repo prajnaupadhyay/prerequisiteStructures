@@ -18,13 +18,17 @@ public class TaskRandomSelect implements Runnable
 	int walklength;
 	HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk; // stores the walks that have been generated till now
 	int node;
+	int orgnode;
+	int startindex;
 	
-	public TaskRandomSelect(AdjListCompact a, int walklength, HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk, int node)
+	public TaskRandomSelect(AdjListCompact a, int walklength, HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk, int node, int orgnode, int startindex)
 	{
 		this.a = a;
 		this.walklength=walklength;
 		this.randomwalk = randomwalk;
 		this.node = node;
+		this.startindex = startindex;
+		this.orgnode = orgnode;
 	}
 	@Override
 	public void run() 
@@ -32,9 +36,9 @@ public class TaskRandomSelect implements Runnable
 		Random r = new Random();
 		// TODO Auto-generated method stub
 		ArrayList<Integer> randomwalk1 = new ArrayList<Integer>();
-		randomwalk1.add(node);
+	//	randomwalk1.add(node);
 		Set<Integer> ss = a.pathGraph.successors(node);
-		for(int j=2;j<walklength;j=j+2)
+		for(int j=startindex;j<walklength;j=j+2)
 		{
 			ArrayList<Integer> al = new ArrayList<Integer>(ss);
 			int i = r.nextInt(al.size());
@@ -47,17 +51,19 @@ public class TaskRandomSelect implements Runnable
 			}
 		}
 		
-		if(randomwalk.get(node)==null)
+		//System.out.println(randomwalk1.size());
+		
+		if(randomwalk.get(orgnode)==null)
 		{
 			ArrayList<ArrayList<Integer>> aa = new ArrayList<ArrayList<Integer>>();
 			aa.add(randomwalk1);
-			randomwalk.put(node, aa);
+			randomwalk.put(orgnode, aa);
 		}
 		else
 		{
-			ArrayList<ArrayList<Integer>> aa = randomwalk.get(node);
+			ArrayList<ArrayList<Integer>> aa = randomwalk.get(orgnode);
 			aa.add(randomwalk1);
-			randomwalk.put(node, aa);
+			randomwalk.put(orgnode, aa);
 		}
 		
 	}
