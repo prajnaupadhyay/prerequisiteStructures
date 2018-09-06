@@ -7,8 +7,10 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.io.*;
 
@@ -53,7 +55,7 @@ public class AdjListCompactOld {
 	{
 		//HashMap<String, HashMap<String, Set<String>>> h = this.getListOfNeighborsForEdgeLabel();
 		//BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
-		int num_threads = (Runtime.getRuntime().availableProcessors()-2); 
+		int num_threads = (Runtime.getRuntime().availableProcessors()); 
 		int nn = numwalks;
 		
 		int c=0;
@@ -358,6 +360,52 @@ public class AdjListCompactOld {
 			bw1.write(dd.getKey()+dd.getValue()+"\n");
 		}
 		bw1.close();
+	}
+	/**
+	 * 
+	 * @param kb
+	 * @param outfile
+	 * @throws Exception
+	 */
+	
+	public void addTriplesAnotherKB(String kb, String outfile) throws Exception
+	{
+		BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
+		Aspect a1 = new Aspect();
+		AdjListCompactOld a = a1.readGraphEfficient(kb);
+		System.out.println("read dbpedia");
+		Set<String> nodes = new HashSet<String>(this.labeledGraph.nodes());
+		
+		for(EndpointPair p:a.labeledGraph.edges())
+		{
+			String u = (String) p.nodeU();
+			String v = (String) p.nodeV();
+			Optional c1 =  a.labeledGraph.edgeValue(u, v);
+			String c="";
+			if(c1.isPresent())
+			{
+				c = (String) c1.get();
+				if(nodes.contains(u) && nodes.contains(v))
+				{
+					bw.write(u+"\t"+c+"\t"+v+"\n");
+				}
+			}
+			
+		}
+		/*for(EndpointPair p:this.labeledGraph.edges())
+		{
+			String u = (String) p.nodeU();
+			String v = (String) p.nodeV();
+			Optional c1 =  this.labeledGraph.edgeValue(u, v);
+			String c="";
+			if(c1.isPresent())
+			{
+				c = (String) c1.get();
+				bw.write(u+"\t"+c+"\t"+v+"\n");
+			}
+			
+		}*/
+		bw.close();
 	}
 	
 	

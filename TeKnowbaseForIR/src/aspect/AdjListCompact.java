@@ -404,4 +404,42 @@ public class AdjListCompact
 		}
 		return path_inverse;
 	}
+	
+	public void generateRandomWalksLatest(BufferedWriter bw, int walklength, int numwalks) throws Exception
+	{
+		int count=0;
+		System.out.println(pathGraph.nodes().size());
+		//HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk = new HashMap<Integer, ArrayList<ArrayList<Integer>>>();
+
+		for(int n:pathGraph.nodes())
+		{
+			if(pathGraphHashmap.get(n)==null) continue;
+			ArrayList<Integer> s = pathGraphHashmap.get(n);
+			if(s.size()==0) continue;
+			count++;
+			if(count%100==0)
+			{
+				System.out.println(count);
+			}
+			int num_threads = Runtime.getRuntime().availableProcessors(); 
+			int nn = 1000;
+			ThreadPoolExecutor executor = new ThreadPoolExecutor(num_threads,
+					nn, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(nn));
+						//int[][] rws = new int[1000][100];
+			HashMap<Integer, String> randomwalk = new HashMap<Integer, String>();
+			randomwalk.put(n, "");
+			//randomwalk.put(n, aa);
+			for(int num=0;num<numwalks;num++)
+			{
+				TaskRandomSelect t1 = new TaskRandomSelect(this, walklength, "", n, n, 1, randomwalk);
+				executor.execute(t1);
+			}
+			executor.shutdown();
+			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+			bw.write(randomwalk.get(n));
+		}
+		
+	}
+	
+	
 }

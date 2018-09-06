@@ -584,6 +584,42 @@ public class Aspect
 	}
 	
 	/**
+	 * reading the graph without creating the supporting data structures
+	 * @param kb
+	 * @return
+	 * @throws Exception
+	 */
+	
+	public static AdjListCompact readGraphEfficient1(String kb) throws Exception
+	{
+		
+		MutableValueGraph<Integer, Integer> weightedGraph = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
+		
+		BufferedReader br = new BufferedReader(new FileReader(kb));
+		String line;
+		
+		while((line=br.readLine())!=null)
+		{
+			StringTokenizer tok = new StringTokenizer(line,"\t");
+			ArrayList<String> tokens = new ArrayList<String>();
+			while(tok.hasMoreTokens())
+			{
+				tokens.add(tok.nextToken());
+			}
+			if(tokens.size()!=3) continue;
+			weightedGraph.putEdgeValue(Integer.parseInt(tokens.get(0)), Integer.parseInt(tokens.get(2)), Integer.parseInt(tokens.get(1)));
+			//tok=null;
+			//tokens=null;
+			
+		}
+		
+		 //Runtime r = Runtime.getRuntime();
+		//r.gc();
+		return new AdjListCompact(ImmutableValueGraph.copyOf(weightedGraph));
+		
+	}
+	
+	/**
 	 * reads the selected meta paths listed inside folder2 and returns a list of lists
 	 * @param folder1: grandparent folder
 	 * @param folder2: parent folder
@@ -966,6 +1002,8 @@ public class Aspect
 		a.generateRandomWalksAlternate(1000, 100);
 	}
 	
+	
+	
 	/**
 	 * test module to check the parallelized version of random walks which selects each neighbor randomly. Uses the meta-path adjacency list to choose a neighbor, instaed of selecting a neighbor related via each relation of meta-path
 	 * @param kb
@@ -982,51 +1020,96 @@ public class Aspect
 		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
 		long endTime = System.nanoTime();
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
-		ArrayList<Integer> path = new ArrayList<Integer>();
-		path.add(1);
-		path.add(496);
-		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		ArrayList<ArrayList<String>> application = this.readMetaPathList(folder, "application");
+		ArrayList<ArrayList<String>> algorithm = this.readMetaPathList(folder, "algorithm");
+		ArrayList<ArrayList<String>> technique = this.readMetaPathList(folder, "technique");
+		ArrayList<ArrayList<String>> implementation = this.readMetaPathList(folder, "implementation");
+		BufferedWriter bw1 = new BufferedWriter(new FileWriter(outfile+"/application.txt"));
+		BufferedWriter bw2 = new BufferedWriter(new FileWriter(outfile+"/algorithm.txt"));
+		BufferedWriter bw3 = new BufferedWriter(new FileWriter(outfile+"/technique.txt"));
+		BufferedWriter bw4 = new BufferedWriter(new FileWriter(outfile+"/implementation.txt"));
 		
-		a.createIndexPathMasterAlternate(path);
+		for(ArrayList<String> as:application)
+		{
+			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
+			
+			ArrayList<Integer> path1 = new ArrayList<Integer>();
+			for(String ss:as)
+			{
+				path1.add(a.relmap.get(ss));
+			}
+			HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path1));
+			
+			a.createIndexPathMasterAlternate(path1);
+			a.generateRandomWalksLatest(bw1, 100, 1000);
+			long endTime2 = System.nanoTime();
+			System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
+			
+		}
+		bw1.close();
+		for(ArrayList<String> as:algorithm)
+		{
+			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
+			ArrayList<Integer> path1 = new ArrayList<Integer>();
+			for(String ss:as)
+			{
+				path1.add(a.relmap.get(ss));
+			}
+			HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path1));
+			
+			a.createIndexPathMasterAlternate(path1);
+			a.generateRandomWalksLatest(bw2, 100, 1000);
+			long endTime2 = System.nanoTime();
+			System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
+			
+		}
+		bw2.close();
+		for(ArrayList<String> as:technique)
+		{
+			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
+			
+			ArrayList<Integer> path1 = new ArrayList<Integer>();
+			for(String ss:as)
+			{
+				path1.add(a.relmap.get(ss));
+			}
+			HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path1));
+			
+			a.createIndexPathMasterAlternate(path1);
+			a.generateRandomWalksLatest(bw3, 100, 1000);
+			long endTime2 = System.nanoTime();
+			System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
+			
+		}
+		bw3.close();
+		for(ArrayList<String> as:implementation)
+		{
+			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
+			
+			ArrayList<Integer> path1 = new ArrayList<Integer>();
+			for(String ss:as)
+			{
+				path1.add(a.relmap.get(ss));
+			}
+			HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path1));
+			
+			a.createIndexPathMasterAlternate(path1);
+			a.generateRandomWalksLatest(bw4, 100, 1000);
+			long endTime2 = System.nanoTime();
+			System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
+			
+		}
+		
+		
+		
+		bw4.close();
 		
 		long endTime2 = System.nanoTime();
 		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
-		BufferedWriter bw = new BufferedWriter(new FileWriter("/home/cse/phd/csz138110/scratch/dbpedia/test/owlsameas_inverse-programminglanguage"));
+		
 		//BufferedWriter bw = new BufferedWriter(new FileWriter("/mnt/dell/prajna/data/dbpedia/test/random_walk_4"));
 	//	Random r = new Random();
-		int count=0;
-		System.out.println(a.pathGraph.nodes().size());
-		//HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk = new HashMap<Integer, ArrayList<ArrayList<Integer>>>();
-
-		for(int n:a.pathGraph.nodes())
-		{
-			if(a.pathGraphHashmap.get(n)==null) continue;
-			ArrayList<Integer> s = a.pathGraphHashmap.get(n);
-			if(s.size()==0) continue;
-			count++;
-			if(count%100==0)
-			{
-				System.out.println(count);
-			}
-			int num_threads = Runtime.getRuntime().availableProcessors(); 
-			int nn = 1000;
-			ThreadPoolExecutor executor = new ThreadPoolExecutor(num_threads,
-					nn, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(nn));
-						//int[][] rws = new int[1000][100];
-			HashMap<Integer, String> randomwalk = new HashMap<Integer, String>();
-			randomwalk.put(n, "");
-			//randomwalk.put(n, aa);
-			for(int num=0;num<1000;num++)
-			{
-				
-				TaskRandomSelect t1 = new TaskRandomSelect(a, 100, "", n, n, 1, randomwalk);
-				executor.execute(t1);
-			}
-			executor.shutdown();
-			executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
-			bw.write(randomwalk.get(n));
-		}
-		bw.close();
+		
 		/*ArrayList<ArrayList<String>> application = this.readMetaPathList(folder, "application");
 		ArrayList<ArrayList<String>> algorithm = this.readMetaPathList(folder, "algorithm");
 		ArrayList<ArrayList<String>> technique = this.readMetaPathList(folder, "technique");
@@ -1056,6 +1139,33 @@ public class Aspect
 		
 	}
 	
+	public void randomWalkMaster1(String kb, String outfile, String folder, String relmap) throws Exception
+	{
+		long startTime = System.nanoTime();
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		long endTime = System.nanoTime();
+		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
+		ArrayList<Integer> path = new ArrayList<Integer>();
+		path.add(13);
+		path.add(0);
+		
+		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		
+		BufferedWriter bw4 = new BufferedWriter(new FileWriter(outfile+"/implementation.txt"));
+		
+		System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
+		
+	//	path.add("owl#sameas_inverse");
+	//	path.add("type");
+		System.out.println("number of nodes is "+a.labeledGraph.nodes().size());
+		//Runtime.getRuntime().gc();
+		a.generateRandomWalks(path, 1000, 100, bw4,h);
+		long endTime2 = System.nanoTime();
+		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
+		bw4.close();
+
+	}
+	
 	/**
 	 * test module to do random walks on TeKnowbase
 	 * @param kb
@@ -1079,7 +1189,7 @@ public class Aspect
 		BufferedWriter bw2 = new BufferedWriter(new FileWriter(outfile+"/algorithm.txt"));
 		BufferedWriter bw3 = new BufferedWriter(new FileWriter(outfile+"/technique.txt"));
 		BufferedWriter bw4 = new BufferedWriter(new FileWriter(outfile+"/implementation.txt"));
-		for(ArrayList<String> as:application)
+		/*for(ArrayList<String> as:application)
 		{
 			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
 			ArrayList<String> path = as;
@@ -1123,7 +1233,7 @@ public class Aspect
 			long afterUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
 			long actualMemUsed = afterUsedMem - beforeUsedMem;
 			System.out.println(actualMemUsed/(1024*1024)+" GB");
-		}
+		}*/
 		for(ArrayList<String> as:implementation)
 		{
 			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
@@ -1132,7 +1242,7 @@ public class Aspect
 		//	path.add("type");
 			//System.out.println("number of nodes is "+a.labeledGraph.nodes().size());
 			//Runtime.getRuntime().gc();
-			a.generateRandomWalks(path, 1000, 100, bw4,h);
+			a.generateRandomWalks(path, 1000, 100, bw4, h);
 			long endTime2 = System.nanoTime();
 			System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
 			long afterUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
@@ -1145,6 +1255,12 @@ public class Aspect
 		bw4.close();
 	}
 	
+	/**
+	 * adds triples from the knowledge graph represented by this class to kb represented by "kb" if both the entities participating in the triple belong to teknowbase
+	 * @param kb
+	 */
+	
+	
 	
 	
 	public static void main(String args[]) throws Exception
@@ -1152,9 +1268,13 @@ public class Aspect
 		GetPropertyValues properties = new GetPropertyValues();
 		HashMap<String, String> hm = properties.getPropValues();
 		Aspect a = new Aspect();
-		a.randomWalkMasterHPC(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"));
+		//AdjListCompactOld a1 = a.readGraphEfficient(hm.get("teknowbase"));
+		
+		//a1.addTriplesAnotherKB(hm.get("dbpedia-original"), hm.get("outfile"));
+		//a.randomWalkMasterHPC(hm.get("yago"), hm.get("outfile"), hm.get("parent-folder"), hm.get("yago-relmap"));
+		//a.randomWalkMaster(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"));
 		//readGraphEfficient(hm.get("dbpedia"));
-		//extractImportantPaths(hm.get("parent-folder"), hm.get("outfile"));
+		extractImportantPaths(hm.get("parent-folder"), hm.get("outfile"));
 		//insert_statement(hm.get("freebase-postprocessed"),"freebase_facts");
 		//replaceNullCharcaters(hm.get("freebase"),hm.get("freebase-postprocessed"));
 		//generateMetaPathsOfLengthDatabase(hm.get("relation"), hm.get("outfile"), hm.get("latest-category-graph-no-duplicates"), hm.get("table-name1"), Integer.parseInt(hm.get("length-meta-path")));

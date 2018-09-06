@@ -26,7 +26,7 @@ public class TaskRandomWalkOld implements Runnable
 			int count=0;
 			String randomwalk1 = node;
 			
-			for(int j=0;j<walklength;j++)
+			for(int j=0;j<walklength;j=j+2)
 			{
 				String node1 = a.randomWalk(path, 0, node, h);
 				if(!node1.equals("")) 
