@@ -1,6 +1,7 @@
 package aspect;
 
 import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,17 +29,17 @@ import java.io.*;
 public class AdjListCompact 
 {
 	
-	ImmutableValueGraph<Integer, Integer> labeledGraph; // graph stored as ImmutableValueGraph from Guava library
+	ImmutableValueGraph<Integer, ArrayList<Integer>> labeledGraph; // graph stored as ImmutableValueGraph from Guava library
 	HashMap<Integer, Integer> inverses; // maps each relationship to its inverse relationship. Used when the reverse of a given meta-path has to be found
 	HashMap<String, Integer> relmap; // mapping of relationship names to their ids
 	HashMap<Long, Set<Integer>> pairAdjList; // index on node and edge label pair to the set of nodes reachable by traversing that edge label from the node
-	ImmutableValueGraph<Integer, Integer> pathGraph; // graph where the nodes are the nodes edges exist between the two nodes if they are related by a meta-path
-	ImmutableValueGraph<Integer, Integer> pathGraph_inverse; // graph representing the transpose of pathGrapt
+	ImmutableValueGraph<Integer, Integer> pathGraph; // graph where the nodes are the nodes, edges exist between the two nodes if they are related by a meta-path
+	ImmutableValueGraph<Integer, Integer> pathGraph_inverse; // graph representing the transpose of pathGraph
 	public HashMap<Integer, ArrayList<Integer>> pathGraphHashmap;
 	public HashMap<Integer, ArrayList<Integer>> pathGraphHashMapReverse;
 	HashMap<Integer, Set<EndpointPair>> relIndex; // index of the edge label to node pairs that participate in a relation described by the edge label
 	
-	public AdjListCompact(ImmutableValueGraph<Integer, Integer> labeledGraph)
+	public AdjListCompact(ImmutableValueGraph<Integer, ArrayList<Integer>> labeledGraph)
 	{
 		this.labeledGraph = labeledGraph;
 	}
@@ -71,40 +72,48 @@ public class AdjListCompact
 			Integer a = (Integer) p.nodeU();
 			Integer b = (Integer) p.nodeV();
 			Optional c1 =  this.labeledGraph.edgeValue(a, b);
-			Integer c = 0;
+			ArrayList<Integer> c = new ArrayList<Integer>();
 			if(c1.isPresent())
 			{
-				c = (Integer) c1.get();
+				c = (ArrayList<Integer>) c1.get();
+				//if(c.contains(115)) System.out.print("115 is present");
+				//if(c==28) System.out.print("28 is present");
 			}
-			if(path.contains(c))
+			for(Integer cc:c)
 			{
-				if(relIndex.get(c)==null)
+				if(path.contains(cc))
 				{
-					Set<EndpointPair> ss = new HashSet<EndpointPair>();
-					ss.add(p);
-					relIndex.put(c,ss);
+					//System.out.println("contains "+c);
+					if(relIndex.get(cc)==null)
+					{
+						Set<EndpointPair> ss = new HashSet<EndpointPair>();
+						ss.add(p);
+						relIndex.put(cc,ss);
+					}
+					else
+					{
+						Set<EndpointPair> ss = relIndex.get(cc);
+						ss.add(p);
+						relIndex.put(cc,ss);
+					}
+				}
+				
+				long l = (((long)a.intValue()) << 32) | (cc.intValue() & 0xffffffffL);
+				
+				if(h.get(l)==null)
+				{
+					Set<Integer> s = new HashSet<Integer>();
+					s.add(b);
+					h.put(l, s);
 				}
 				else
 				{
-					Set<EndpointPair> ss = relIndex.get(c);
-					ss.add(p);
-					relIndex.put(c,ss);
+					Set<Integer> s = h.get(l);
+					s.add(b);
+					h.put(l, s);
 				}
 			}
-			long l = (((long)a.intValue()) << 32) | (c.intValue() & 0xffffffffL);
 			
-			if(h.get(l)==null)
-			{
-				Set<Integer> s = new HashSet<Integer>();
-				s.add(b);
-				h.put(l, s);
-			}
-			else
-			{
-				Set<Integer> s = h.get(l);
-				s.add(b);
-				h.put(l, s);
-			}
 		}
 		System.out.println(relIndex.size());
 		this.pairAdjList = h;
@@ -287,6 +296,7 @@ public class AdjListCompact
 		HashMap<Integer, ArrayList<Integer>> hh_inverse = new HashMap<Integer, ArrayList<Integer>>();
 		this.pathGraph = ImmutableValueGraph.copyOf(pathGraph);
 		this.pathGraph_inverse = ImmutableValueGraph.copyOf(pathGraph_reverse);
+		System.out.println("number of edges in path graph = "+this.pathGraph.edges().size());
 		for(EndpointPair pp:pathGraph.edges())
 		{
 			int u = (int) pp.nodeU();
@@ -440,6 +450,28 @@ public class AdjListCompact
 		}
 		
 	}
+	
+	public void writeToFile(String path) throws Exception
+	{
+		BufferedWriter bw = new BufferedWriter(new FileWriter(path));
+		for(EndpointPair p:this.labeledGraph.edges())
+		{
+			Integer a = (Integer) p.nodeU();
+			Integer b = (Integer) p.nodeV();
+			Optional c1 =  this.labeledGraph.edgeValue(a, b);
+			ArrayList<Integer> c = new ArrayList<Integer>();
+			if(c1.isPresent())
+			{
+				c = (ArrayList<Integer>) c1.get();
+				for(Integer i:c)
+				{
+					bw.write(a+"\t"+i+"\t"+b+"\n");
+				}
+			}
+		}
+		bw.close();
+	}
+	
 	
 	
 }

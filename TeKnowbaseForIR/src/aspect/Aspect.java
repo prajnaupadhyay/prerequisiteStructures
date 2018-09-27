@@ -368,6 +368,80 @@ public class Aspect
 		}
 		return counts;
 	}
+	
+	public static void choose(String line, BufferedWriter bw, String app) throws Exception
+	{
+		StringTokenizer tok1 = new StringTokenizer(line,"\t");
+		ArrayList<String> tokens1 = new ArrayList<String>();
+		while(tok1.hasMoreTokens())
+		{
+			tokens1.add(tok1.nextToken());
+		}
+		
+		StringTokenizer tok = new StringTokenizer(tokens1.get(0)," ");
+		ArrayList<String> tokens = new ArrayList<String>();
+		while(tok.hasMoreTokens())
+		{
+			tokens.add(tok.nextToken());
+		}
+		System.out.println(tokens.size());
+		if((tokens.get(1).contains(app) || tokens.get(1).contains(app)) && Double.parseDouble(tokens1.get(1))>0)
+		{
+			bw.write(tokens.get(0)+" "+tokens.get(1)+"\n");
+		}
+	}
+	
+	public static void chooseExtraPaths(String parent_folder, String file) throws Exception
+	{
+		BufferedReader br = new BufferedReader(new FileReader(file));
+		BufferedWriter bw1 = new BufferedWriter(new FileWriter(parent_folder+"/application/selected_meta-paths"));
+		BufferedWriter bw2 = new BufferedWriter(new FileWriter(parent_folder+"/algorithm/selected_meta-paths"));
+		BufferedWriter bw3 = new BufferedWriter(new FileWriter(parent_folder+"/implementation/selected_meta-paths"));
+		String line;
+		int c=0;
+		int c2=0;
+		while((line=br.readLine())!=null)
+		{
+			c=c+1;
+			if(line.equals("\n")) continue;
+			
+			if(!line.startsWith(" "))
+			{
+				if(line.equals("application"))
+				{
+					c2=1;
+				}
+				else if(line.equals("algorithm"))
+				{
+					c2=2;
+				}
+				else if(line.equals("implementation"))
+				{
+					c2=3;
+				}
+			}
+			else if(line.startsWith(" "))
+			{
+				if(c2==1) 
+				{
+					choose(line,bw1,"applicationof");
+				}
+				else if(c2==2) 
+				{
+					choose(line,bw2,"algorithmfor");
+				}
+				else if(c2==3) 
+				{
+					choose(line,bw3,"implementationof");
+				}
+				
+			}
+		}
+		bw1.close();
+		bw2.close();
+		bw3.close();
+		
+	}
 	/**
 	 * 
 	 * @param app
@@ -379,12 +453,14 @@ public class Aspect
 	
 	public static void extractImportantPaths(String app, String outfile) throws Exception
 	{
+		GetPropertyValues properties = new GetPropertyValues();
+		HashMap<String, String> hm = properties.getPropValues();
 		HashMap<String, Double> app_counts = readFile(app+"/meta-path-applicationof_length_2_with_counts.tsv");
-		HashMap<String, Double> tech_counts = readFile(app+"/meta-path-techniquein_length_2_with_counts.tsv");
+		//HashMap<String, Double> tech_counts = readFile(app+"/meta-path-techniquein_length_2_with_counts.tsv");
 		HashMap<String, Double> algo_counts = readFile(app+"/meta-path-algorithmfor_length_2_with_counts.tsv");
 		HashMap<String, Double> impl_counts = readFile(app+"/meta-path-implementationof_length_2_with_counts.tsv");
 		HashSet<String> h1 = new HashSet<>(app_counts.keySet());
-		h1.addAll(tech_counts.keySet());
+		//h1.addAll(tech_counts.keySet());
 		h1.addAll(algo_counts.keySet());
 		h1.addAll(impl_counts.keySet());
 		
@@ -395,27 +471,27 @@ public class Aspect
 		for(String s:h1)
 		{
 			double tf1 = ((app_counts.get(s) == null) ? 0 : app_counts.get(s)) ;
-			double idf1 = Math.log(4/(((app_counts.get(s) == null) ? 0 : 1) + ((tech_counts.get(s) == null) ? 0 : 1) + ((algo_counts.get(s) == null) ? 0 : 1) + ((impl_counts.get(s) == null) ? 0 : 1)));
-			double tf2 = (tech_counts.get(s)==null?0:tech_counts.get(s));
+			double idf1 = Math.log(4/(((app_counts.get(s) == null) ? 0 : 1) +  ((algo_counts.get(s) == null) ? 0 : 1) + ((impl_counts.get(s) == null) ? 0 : 1)));
+			//double tf2 = (tech_counts.get(s)==null?0:tech_counts.get(s));
 			
 			double tf3 = (algo_counts.get(s)==null?0:algo_counts.get(s));
 			
 			double tf4 = (impl_counts.get(s)==null?0:impl_counts.get(s));
 			
 			if(tf1!=0) tf_idf_map_app.put(s, tf1*idf1);
-			if(tf2!=0) tf_idf_map_tech.put(s, tf2*idf1);
+			//if(tf2!=0) tf_idf_map_tech.put(s, tf2*idf1);
 			if(tf3!=0) tf_idf_map_algo.put(s, tf3*idf1);
 			if(tf4!=0) tf_idf_map_impl.put(s, tf4*idf1);
 		}
 		
 		
 		ArrayList<Entry<String, Double>> ee = new ArrayList<Entry<String, Double>>(tf_idf_map_app.entrySet());
-		ArrayList<Entry<String, Double>> ee1 = new ArrayList<Entry<String, Double>>(tf_idf_map_tech.entrySet());
+		//ArrayList<Entry<String, Double>> ee1 = new ArrayList<Entry<String, Double>>(tf_idf_map_tech.entrySet());
 		ArrayList<Entry<String, Double>> ee2 = new ArrayList<Entry<String, Double>>(tf_idf_map_algo.entrySet());
 		ArrayList<Entry<String, Double>> ee3 = new ArrayList<Entry<String, Double>>(tf_idf_map_impl.entrySet());
 		
 		Collections.sort(ee, doubleComparator);
-		Collections.sort(ee1, doubleComparator);
+		//Collections.sort(ee1, doubleComparator);
 		Collections.sort(ee2, doubleComparator);
 		Collections.sort(ee3, doubleComparator);
 		
@@ -425,11 +501,97 @@ public class Aspect
 		{
 			bw.write(e.getKey()+"\t"+e.getValue()+"\n");
 		}
-		bw.write("\n\ntechnique\n\n");
+		/*bw.write("\n\ntechnique\n\n");
 		for(Entry<String, Double> e:ee1)
 		{
 			bw.write(e.getKey()+"\t"+e.getValue()+"\n");
+		}*/
+		bw.write("\n\nalgorithm\n\n");
+		for(Entry<String, Double> e:ee2)
+		{
+			bw.write(e.getKey()+"\t"+e.getValue()+"\n");
 		}
+		bw.write("\n\nimplementation\n\n");
+		for(Entry<String, Double> e:ee3)
+		{
+			bw.write(e.getKey()+"\t"+e.getValue()+"\n");
+		}
+		bw.close();
+		//chooseExtraPaths(hm.get("parent-folder1"),outfile);
+		
+	}
+	
+	/**
+	 * 
+	 * @param app
+	 * @param tech
+	 * @param algo
+	 * @param impl
+	 * @throws Exception
+	 */
+	
+	public static void extractImportantPaths1(String app, String outfile) throws Exception
+	{
+		HashMap<String, Double> app_counts = readFile(app+"/meta-path-applicationof_length_2_with_counts.tsv");
+		//HashMap<String, Double> tech_counts = readFile(app+"/meta-path-techniquein_length_2_with_counts.tsv");
+		HashMap<String, Double> algo_counts = readFile(app+"/meta-path-algorithmfor_length_2_with_counts.tsv");
+		HashMap<String, Double> impl_counts = readFile(app+"/meta-path-implementationof_length_2_with_counts.tsv");
+		HashSet<String> h1 = new HashSet<>(app_counts.keySet());
+		//h1.addAll(tech_counts.keySet());
+		h1.addAll(algo_counts.keySet());
+		h1.addAll(impl_counts.keySet());
+		int app_count = 19041;
+		int tech_count = 6402;
+		int algo_count = 5060;
+		int impl_count = 9214;
+		
+		HashMap<String, Double> tf_idf_map_app = new HashMap<String, Double>();
+		//HashMap<String, Double> tf_idf_map_tech = new HashMap<String, Double>();
+		HashMap<String, Double> tf_idf_map_algo = new HashMap<String, Double>();
+		HashMap<String, Double> tf_idf_map_impl = new HashMap<String, Double>();
+		for(String s:h1)
+		{
+			double tf1 = ((app_counts.get(s) == null) ? 0 : app_counts.get(s)) ;
+			double idf1 = 3/(((app_counts.get(s) == null) ? 0 : (app_counts.get(s)/app_count)) +  ((algo_counts.get(s) == null) ? 0 : (algo_counts.get(s)/algo_count)) + ((impl_counts.get(s) == null) ? 0 : (impl_counts.get(s)/impl_count)));
+			//double tf2 = (tech_counts.get(s)==null?0:tech_counts.get(s));
+			
+			double tf3 = (algo_counts.get(s)==null?0:algo_counts.get(s));
+			
+			double tf4 = (impl_counts.get(s)==null?0:impl_counts.get(s));
+			
+			if(tf1!=0) tf_idf_map_app.put(s, tf1*idf1);
+			//if(tf2!=0) tf_idf_map_tech.put(s, tf2*idf1);
+			if(tf3!=0) tf_idf_map_algo.put(s, tf3*idf1);
+			if(tf4!=0) tf_idf_map_impl.put(s, tf4*idf1);
+			
+			/*tf_idf_map_app.put(s, idf1);
+			tf_idf_map_tech.put(s, idf1);
+			tf_idf_map_algo.put(s, idf1);
+			tf_idf_map_impl.put(s, idf1);*/
+		}
+		
+		
+		ArrayList<Entry<String, Double>> ee = new ArrayList<Entry<String, Double>>(tf_idf_map_app.entrySet());
+		//ArrayList<Entry<String, Double>> ee1 = new ArrayList<Entry<String, Double>>(tf_idf_map_tech.entrySet());
+		ArrayList<Entry<String, Double>> ee2 = new ArrayList<Entry<String, Double>>(tf_idf_map_algo.entrySet());
+		ArrayList<Entry<String, Double>> ee3 = new ArrayList<Entry<String, Double>>(tf_idf_map_impl.entrySet());
+		
+		Collections.sort(ee, doubleComparator);
+	//	Collections.sort(ee1, doubleComparator);
+		Collections.sort(ee2, doubleComparator);
+		Collections.sort(ee3, doubleComparator);
+		
+		BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
+		bw.write("\n\napplication\n\n");
+		for(Entry<String, Double> e:ee)
+		{
+			bw.write(e.getKey()+"\t"+e.getValue()+"\n");
+		}
+	/*	bw.write("\n\ntechnique\n\n");
+		for(Entry<String, Double> e:ee1)
+		{
+			bw.write(e.getKey()+"\t"+e.getValue()+"\n");
+		}*/
 		bw.write("\n\nalgorithm\n\n");
 		for(Entry<String, Double> e:ee2)
 		{
@@ -493,7 +655,7 @@ public class Aspect
 	public static AdjListCompact readGraphEfficientAlternate(String kb, String relMap) throws Exception
 	{
 		
-		MutableValueGraph<Integer, Integer> weightedGraph = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
+		MutableValueGraph<Integer, ArrayList<Integer>> weightedGraph = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 		HashMap<Integer, Integer> h1 = new HashMap<Integer, Integer>();
 		
 		BufferedReader br = new BufferedReader(new FileReader(kb));
@@ -508,7 +670,22 @@ public class Aspect
 				tokens.add(tok.nextToken());
 			}
 			if(tokens.size()!=3) continue;
-			weightedGraph.putEdgeValue(Integer.parseInt(tokens.get(0)), Integer.parseInt(tokens.get(2)), Integer.parseInt(tokens.get(1)));
+			Integer a = (Integer) Integer.parseInt(tokens.get(0));
+			Integer b = (Integer) Integer.parseInt(tokens.get(2));
+			Optional c1 =  weightedGraph.edgeValue(a, b);
+			if(c1.isPresent())
+			{
+				ArrayList<Integer> c = (ArrayList<Integer>) c1.get();
+				c.add(Integer.parseInt(tokens.get(1)));
+				weightedGraph.putEdgeValue(a, b, c);
+			}
+			else
+			{
+				ArrayList<Integer> c = new ArrayList<Integer>();
+				c.add(Integer.parseInt(tokens.get(1)));
+				weightedGraph.putEdgeValue(a, b, c);
+			}
+			
 			
 			
 		}
@@ -573,6 +750,7 @@ public class Aspect
 			}
 			if(tokens.size()!=3) continue;
 			weightedGraph.putEdgeValue(tokens.get(0), tokens.get(2), tokens.get(1));
+			
 			//tok=null;
 			//tokens=null;
 			
@@ -593,7 +771,7 @@ public class Aspect
 	public static AdjListCompact readGraphEfficient1(String kb) throws Exception
 	{
 		
-		MutableValueGraph<Integer, Integer> weightedGraph = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
+		MutableValueGraph<Integer, ArrayList<Integer>> weightedGraph = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 		
 		BufferedReader br = new BufferedReader(new FileReader(kb));
 		String line;
@@ -607,9 +785,21 @@ public class Aspect
 				tokens.add(tok.nextToken());
 			}
 			if(tokens.size()!=3) continue;
-			weightedGraph.putEdgeValue(Integer.parseInt(tokens.get(0)), Integer.parseInt(tokens.get(2)), Integer.parseInt(tokens.get(1)));
-			//tok=null;
-			//tokens=null;
+			Integer a = (Integer) Integer.parseInt(tokens.get(0));
+			Integer b = (Integer) Integer.parseInt(tokens.get(2));
+			Optional c1 =  weightedGraph.edgeValue(a, b);
+			if(c1.isPresent())
+			{
+				ArrayList<Integer> c = (ArrayList<Integer>) c1.get();
+				c.add(Integer.parseInt(tokens.get(1)));
+				weightedGraph.putEdgeValue(a, b, c);
+			}
+			else
+			{
+				ArrayList<Integer> c = new ArrayList<Integer>();
+				c.add(Integer.parseInt(tokens.get(1)));
+				weightedGraph.putEdgeValue(a, b, c);
+			}
 			
 		}
 		
@@ -1004,6 +1194,7 @@ public class Aspect
 	
 	
 	
+	
 	/**
 	 * test module to check the parallelized version of random walks which selects each neighbor randomly. Uses the meta-path adjacency list to choose a neighbor, instaed of selecting a neighbor related via each relation of meta-path
 	 * @param kb
@@ -1013,30 +1204,57 @@ public class Aspect
 	 * @throws Exception
 	 */
 	
-	public void randomWalkMasterHPC(String kb, String outfile, String folder, String relmap) throws Exception
+	public void randomWalkMasterHPC(String kb, String outfile, String folder, String relmap, String relation) throws Exception
 	{
 		long startTime = System.nanoTime();
 		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
 		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		//a.writeToFile("/home/cse/phd/csz138110/scratch/teknowbase_alternate/test.tsv");
+		//System.out.println(a.labeledGraph.edges().size());
 		long endTime = System.nanoTime();
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
-		ArrayList<ArrayList<String>> application = this.readMetaPathList(folder, "application");
-		ArrayList<ArrayList<String>> algorithm = this.readMetaPathList(folder, "algorithm");
+		ArrayList<ArrayList<String>> application = this.readMetaPathList(folder, relation);
+	/*	ArrayList<ArrayList<String>> algorithm = this.readMetaPathList(folder, "algorithm");
 		ArrayList<ArrayList<String>> technique = this.readMetaPathList(folder, "technique");
 		ArrayList<ArrayList<String>> implementation = this.readMetaPathList(folder, "implementation");
-		BufferedWriter bw1 = new BufferedWriter(new FileWriter(outfile+"/application.txt"));
+		
 		BufferedWriter bw2 = new BufferedWriter(new FileWriter(outfile+"/algorithm.txt"));
 		BufferedWriter bw3 = new BufferedWriter(new FileWriter(outfile+"/technique.txt"));
-		BufferedWriter bw4 = new BufferedWriter(new FileWriter(outfile+"/implementation.txt"));
-		
-		for(ArrayList<String> as:application)
+		BufferedWriter bw4 = new BufferedWriter(new FileWriter(outfile+"/implementation.txt"));*/
+		BufferedWriter bw1 = new BufferedWriter(new FileWriter(outfile+"/"+relation.replace(" ", "-")+".txt"));
+		StringTokenizer tok = new StringTokenizer(relation," ");
+		ArrayList<String> as = new ArrayList<String>();
+		while(tok.hasMoreTokens())
 		{
-			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
-			
+			as.add(tok.nextToken());
+		}
+		//for(ArrayList<String> as:application)
+		//{
+			//System.out.println("reading graph for"+ relation+" done, time taken to read graph = "+(endTime - startTime)/1000000000);
 			ArrayList<Integer> path1 = new ArrayList<Integer>();
+			int flag=0;
 			for(String ss:as)
 			{
+				System.out.println(ss+"\t");
+				if(a.relmap.get(ss)==null) 
+				{
+					System.out.println(ss+" has no mapping");
+					flag=1;
+					break;
+				}
+				
 				path1.add(a.relmap.get(ss));
+			}
+			if(flag==1) return;
+			System.out.println("\n");
+			if(path1.size()!=as.size())
+			{
+				System.out.println("sizes are not the same");
+				return;
+			}
+			else
+			{
+				System.out.println(path1.get(0)+"\t"+path1.get(1));
 			}
 			HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path1));
 			
@@ -1045,11 +1263,11 @@ public class Aspect
 			long endTime2 = System.nanoTime();
 			System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
 			
-		}
+		//}
 		bw1.close();
-		for(ArrayList<String> as:algorithm)
+		/*for(ArrayList<String> as:algorithm)
 		{
-			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
+			System.out.println("reading graph for algorithm done, time taken to read graph = "+(endTime - startTime)/1000000000);
 			ArrayList<Integer> path1 = new ArrayList<Integer>();
 			for(String ss:as)
 			{
@@ -1064,9 +1282,9 @@ public class Aspect
 			
 		}
 		bw2.close();
-		for(ArrayList<String> as:technique)
+		/*for(ArrayList<String> as:technique)
 		{
-			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
+			System.out.println("reading graph for technique done, time taken to read graph = "+(endTime - startTime)/1000000000);
 			
 			ArrayList<Integer> path1 = new ArrayList<Integer>();
 			for(String ss:as)
@@ -1084,7 +1302,7 @@ public class Aspect
 		bw3.close();
 		for(ArrayList<String> as:implementation)
 		{
-			System.out.println("reading graph done, time taken to read graph = "+(endTime - startTime)/1000000000);
+			System.out.println("reading graph for implementation done, time taken to read graph = "+(endTime - startTime)/1000000000);
 			
 			ArrayList<Integer> path1 = new ArrayList<Integer>();
 			for(String ss:as)
@@ -1100,11 +1318,9 @@ public class Aspect
 			
 		}
 		
+		bw4.close();*/
 		
-		
-		bw4.close();
-		
-		long endTime2 = System.nanoTime();
+		//long endTime2 = System.nanoTime();
 		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
 		
 		//BufferedWriter bw = new BufferedWriter(new FileWriter("/mnt/dell/prajna/data/dbpedia/test/random_walk_4"));
@@ -1269,12 +1485,12 @@ public class Aspect
 		HashMap<String, String> hm = properties.getPropValues();
 		Aspect a = new Aspect();
 		//AdjListCompactOld a1 = a.readGraphEfficient(hm.get("teknowbase"));
-		
+		//DBAdjList d = new DBAdjList("evaluation","tkbforir","123456","tkbforir_evaluation");
 		//a1.addTriplesAnotherKB(hm.get("dbpedia-original"), hm.get("outfile"));
-		//a.randomWalkMasterHPC(hm.get("yago"), hm.get("outfile"), hm.get("parent-folder"), hm.get("yago-relmap"));
+		a.randomWalkMasterHPC(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"), hm.get("relation"));
 		//a.randomWalkMaster(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"));
 		//readGraphEfficient(hm.get("dbpedia"));
-		extractImportantPaths(hm.get("parent-folder"), hm.get("outfile"));
+		//extractImportantPaths(hm.get("parent-folder"), hm.get("outfile"));
 		//insert_statement(hm.get("freebase-postprocessed"),"freebase_facts");
 		//replaceNullCharcaters(hm.get("freebase"),hm.get("freebase-postprocessed"));
 		//generateMetaPathsOfLengthDatabase(hm.get("relation"), hm.get("outfile"), hm.get("latest-category-graph-no-duplicates"), hm.get("table-name1"), Integer.parseInt(hm.get("length-meta-path")));

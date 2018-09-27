@@ -72,6 +72,11 @@ public class DBAdjList {
 		return ee;
 	}
 	
+	public static void main() throws Exception
+	{
+		DBAdjList d = new DBAdjList("evaluation","tkbforir","123456","tkbforir_evaluation");
+	}
+	
 	/**
 	 * this module is exactly same as the module that retrieves k-hop paths for AdjList class. 
 	 * @param inputConcept
