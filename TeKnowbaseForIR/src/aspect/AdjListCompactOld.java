@@ -408,6 +408,46 @@ public class AdjListCompactOld {
 		bw.close();
 	}
 	
+	public void returnTriplesForEdgeLabel(String r)
+	{
+		HashMap<Integer, Set<EndpointPair>> relIndex = new HashMap<Integer, Set<EndpointPair>>();
+		for(EndpointPair p:this.labeledGraph.edges())
+		{
+			Integer a = (Integer) p.nodeU();
+			Integer b = (Integer) p.nodeV();
+			Optional c1 =  this.labeledGraph.edgeValue(a, b);
+			ArrayList<Integer> c = new ArrayList<Integer>();
+			if(c1.isPresent())
+			{
+				c = (ArrayList<Integer>) c1.get();
+				//if(c.contains(115)) System.out.print("115 is present");
+				//if(c==28) System.out.print("28 is present");
+			}
+			for(Integer cc:c)
+			{
+				if(r==cc)
+				{
+					//System.out.println("contains "+c);
+					if(relIndex.get(cc)==null)
+					{
+						Set<EndpointPair> ss = new HashSet<EndpointPair>();
+						ss.add(p);
+						relIndex.put(cc,ss);
+					}
+					else
+					{
+						Set<EndpointPair> ss = relIndex.get(cc);
+						ss.add(p);
+						relIndex.put(cc,ss);
+					}
+				}
+				
+			}
+			
+		}
+		this.relIndex=relIndex;
+	}
+	
 	
 	public static void main(String[] args)
 	{

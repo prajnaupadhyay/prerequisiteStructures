@@ -652,7 +652,7 @@ public class Aspect
 	 * @throws Exception
 	 */
 	
-	public static AdjListCompact readGraphEfficientAlternate(String kb, String relMap) throws Exception
+	public static AdjListCompact readGraphEfficientAlternate(String kb, String relMap, String nodeMap) throws Exception
 	{
 		
 		MutableValueGraph<Integer, ArrayList<Integer>> weightedGraph = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
@@ -690,6 +690,7 @@ public class Aspect
 			
 		}
 		HashMap<String, Integer> relmap = new HashMap<String, Integer>();
+		HashMap<Integer, String> relmap1 = new HashMap<Integer, String>();
 		BufferedReader br1 = new BufferedReader(new FileReader(relMap));
 		while((line=br1.readLine())!=null)
 		{
@@ -701,7 +702,7 @@ public class Aspect
 			}
 			if(tokens.size()!=2) continue;
 			relmap.put(tokens.get(0), Integer.parseInt(tokens.get(1)));
-			
+			relmap1.put(Integer.parseInt(tokens.get(1)), tokens.get(0));
 		}
 		
 		for(String s:relmap.keySet())
@@ -716,9 +717,29 @@ public class Aspect
 				}
 			}
 		}
+		
+		HashMap<Integer, String> nodeIndex = new HashMap<Integer, String>();
+		HashMap<String, Integer> nodeIndex1 = new HashMap<String, Integer>();
+		BufferedReader br2 = new BufferedReader(new FileReader(nodeMap));
+		while((line=br2.readLine())!=null)
+		{
+			StringTokenizer tok = new StringTokenizer(line,"\t");
+			ArrayList<String> tokens = new ArrayList<String>();
+			while(tok.hasMoreTokens())
+			{
+				tokens.add(tok.nextToken());
+			}
+			if(tokens.size()!=2) continue;
+			nodeIndex.put(Integer.parseInt(tokens.get(1)), tokens.get(0));
+			nodeIndex1.put(tokens.get(0), Integer.parseInt(tokens.get(1)));
+		}
+	
 		AdjListCompact aa = new AdjListCompact(ImmutableValueGraph.copyOf(weightedGraph));
 		aa.setInverses(h1);
 		aa.setRelMap(relmap);
+		aa.nodeMap=nodeIndex;
+		aa.nodeMap1=nodeIndex1;
+		aa.relmap1 = relmap1;
 		 //Runtime r = Runtime.getRuntime();
 		//r.gc();
 		return aa;
@@ -919,18 +940,18 @@ public class Aspect
 	 * @throws Exception
 	 */
 	
-	public void randomWalkMaster5(String kb, String outfile, String folder, String relmap) throws Exception
+	public void randomWalkMaster5(String kb, String outfile, String folder, String relmap, String nodeMap) throws Exception
 	{
 		long startTime = System.nanoTime();
 		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
-		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap, nodeMap);
 		long endTime = System.nanoTime();
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
 		ArrayList<Integer> path = new ArrayList<Integer>();
 		path.add(4);
 		path.add(12);
 		
-		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
 		a.createIndexPathMasterAlternate(path);
 		
 		long endTime2 = System.nanoTime();
@@ -957,18 +978,18 @@ public class Aspect
 	 * @throws Exception
 	 */
 	
-	public void randomWalkMasterHPC4(String kb, String outfile, String folder, String relmap) throws Exception
+	public void randomWalkMasterHPC4(String kb, String outfile, String folder, String relmap, String nodeMap) throws Exception
 	{
 		long startTime = System.nanoTime();
 		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
-		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap, nodeMap);
 		long endTime = System.nanoTime();
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
 		ArrayList<Integer> path = new ArrayList<Integer>();
 		path.add(4);
 		path.add(12);
 		
-		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
 		a.createIndexPathMasterAlternate(path);
 		
 		//HashMap<Integer, ArrayList<Integer>> h1 = new HashMap<Integer, ArrayList<Integer>>();
@@ -1042,18 +1063,18 @@ public class Aspect
 	 */
 	
 
-	public void randomWalkMasterHPC3(String kb, String outfile, String folder, String relmap) throws Exception
+	public void randomWalkMasterHPC3(String kb, String outfile, String folder, String relmap, String nodeMap) throws Exception
 	{
 		long startTime = System.nanoTime();
 		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
-		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap, nodeMap);
 		long endTime = System.nanoTime();
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
 		ArrayList<Integer> path = new ArrayList<Integer>();
 		path.add(1);
 		path.add(36);
 		
-		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
 		a.createIndexPathMasterAlternate(path);
 		
 		long endTime2 = System.nanoTime();
@@ -1116,18 +1137,18 @@ public class Aspect
 	 * @throws Exception
 	 */
 	
-	public void randomWalkMasterHPC1(String kb, String outfile, String folder, String relmap) throws Exception
+	public void randomWalkMasterHPC1(String kb, String outfile, String folder, String relmap, String nodeMap) throws Exception
 	{
 		long startTime = System.nanoTime();
 		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
-		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap, nodeMap);
 		long endTime = System.nanoTime();
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
 		ArrayList<Integer> path = new ArrayList<Integer>();
 		path.add(4);
 		path.add(12);
 		
-		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
 		
 		a.createIndexPathMasterAlternate(path);
 		
@@ -1173,17 +1194,17 @@ public class Aspect
 	 * @throws Exception
 	 */
 	
-	public void randomWalkMasterHPC2(String kb, String outfile, String folder, String relmap) throws Exception
+	public void randomWalkMasterHPC2(String kb, String outfile, String folder, String relmap, String nodeMap) throws Exception
 	{
 		long startTime = System.nanoTime();
 		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
-		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap, nodeMap);
 		long endTime = System.nanoTime();
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
 		ArrayList<Integer> path = new ArrayList<Integer>();
 		path.add(1);
 		path.add(36);
-		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
 		
 		a.createIndexPathMasterAlternate(path);
 		
@@ -1204,16 +1225,16 @@ public class Aspect
 	 * @throws Exception
 	 */
 	
-	public void randomWalkMasterHPC(String kb, String outfile, String folder, String relmap, String relation) throws Exception
+	public void randomWalkMasterHPC(String kb, String outfile, String folder, String relmap, String relation, String nodeMap) throws Exception
 	{
 		long startTime = System.nanoTime();
 		//long beforeUsedMem = Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory();
-		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap, nodeMap);
 		//a.writeToFile("/home/cse/phd/csz138110/scratch/teknowbase_alternate/test.tsv");
 		//System.out.println(a.labeledGraph.edges().size());
 		long endTime = System.nanoTime();
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
-		ArrayList<ArrayList<String>> application = this.readMetaPathList(folder, relation);
+		//ArrayList<ArrayList<String>> application = this.readMetaPathList(folder, relation);
 	/*	ArrayList<ArrayList<String>> algorithm = this.readMetaPathList(folder, "algorithm");
 		ArrayList<ArrayList<String>> technique = this.readMetaPathList(folder, "technique");
 		ArrayList<ArrayList<String>> implementation = this.readMetaPathList(folder, "implementation");
@@ -1256,9 +1277,13 @@ public class Aspect
 			{
 				System.out.println(path1.get(0)+"\t"+path1.get(1));
 			}
-			HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path1));
+			a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path1));
 			
 			a.createIndexPathMasterAlternate(path1);
+			a.pairAdjList=null;
+			a.pathGraph=null;
+			a.pathGraph_inverse=null;
+			System.gc();
 			a.generateRandomWalksLatest(bw1, 100, 1000);
 			long endTime2 = System.nanoTime();
 			System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
@@ -1355,17 +1380,17 @@ public class Aspect
 		
 	}
 	
-	public void randomWalkMaster1(String kb, String outfile, String folder, String relmap) throws Exception
+	public void randomWalkMaster1(String kb, String outfile, String folder, String relmap, String nodeMap) throws Exception
 	{
 		long startTime = System.nanoTime();
-		AdjListCompact a = readGraphEfficientAlternate(kb, relmap);
+		AdjListCompact a = readGraphEfficientAlternate(kb, relmap, nodeMap);
 		long endTime = System.nanoTime();
 		System.out.println("reading graph done, time taken: "+(endTime-startTime)/1000000000);
 		ArrayList<Integer> path = new ArrayList<Integer>();
 		path.add(13);
 		path.add(0);
 		
-		HashMap<Long, Set<Integer>> h = a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
+		a.getListOfNeighborsForEdgeLabel(new HashSet<Integer>(path));
 		
 		BufferedWriter bw4 = new BufferedWriter(new FileWriter(outfile+"/implementation.txt"));
 		
@@ -1375,11 +1400,100 @@ public class Aspect
 	//	path.add("type");
 		System.out.println("number of nodes is "+a.labeledGraph.nodes().size());
 		//Runtime.getRuntime().gc();
-		a.generateRandomWalks(path, 1000, 100, bw4,h);
+		a.generateRandomWalks(path, 1000, 100, bw4,a.pairAdjList);
 		long endTime2 = System.nanoTime();
 		System.out.println("random walks for a path done, time taken to generate labels = "+(endTime2 - endTime)/1000000000);
 		bw4.close();
 
+	}
+	
+	public static void generateMetaPathsOfLengthMaster1(String relation, String outfile, String kb1, String kb2, int length) throws Exception
+	{
+		BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
+		long startTime = System.nanoTime();
+		AdjListCompactOld a1 = readGraphEfficient(kb1);
+		long endTime = System.nanoTime();
+		System.out.println("read first graph, time taken ="+(endTime - startTime)/1000000000);
+		AdjListCompactOld a2 = readGraphEfficient(kb2);
+		long endTime1 = System.nanoTime();
+		System.out.println("read second graph, time taken ="+(endTime1 - endTime)/1000000000);
+		
+		
+	}
+	/**
+	 * 
+	 * @param relation
+	 * @param outfile
+	 * @param kb1
+	 * @param kb2
+	 * @param length
+	 * @param relmap1
+	 * @param relmap2
+	 * @param nodeMap1
+	 * @param nodeMap2
+	 * @throws Exception
+	 */
+	
+	public static void generateMetaPathsOfLengthMaster(String relation, String outfile, String kb1, String kb2, int length, String relmap1, String relmap2, String nodeMap1, String nodeMap2) throws Exception
+	{
+		BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
+		AdjListCompact a1 = readGraphEfficientAlternate(kb1, relmap1, nodeMap1);
+		System.out.println("read first graph");
+		AdjListCompact a2 = readGraphEfficientAlternate(kb2, relmap2, nodeMap2);
+		System.out.println("read second graph");
+		int r = a1.relmap.get(relation);
+		a1.returnTriplesForEdgeLabel(r);
+		System.out.println("retrieved pairs for relation");
+		Set<EndpointPair> pair = a1.relIndex.get(r);
+		int c1=0;
+		for(EndpointPair p:pair)
+		{
+			c1++;
+			int u = (int) p.nodeU();
+			int v = (int) p.nodeV();
+			if (a2.nodeMap1.get(a1.nodeMap.get(u))!=null && a2.nodeMap1.get(a1.nodeMap.get(v))!=null)
+			{
+				a2.findPaths(a2.nodeMap1.get(a1.nodeMap.get(u)), a2.nodeMap1.get(a1.nodeMap.get(v)), length, bw);
+			}
+			System.out.println(c1);
+		}
+		bw.close();
+		System.out.println("found paths");
+		BufferedReader br = new BufferedReader(new FileReader(outfile));
+		BufferedWriter bw1 = new BufferedWriter(new FileWriter(outfile.replace(".tsv", "")+"_with_counts.tsv"));
+		String line;
+		HashMap<String, Integer> meta_paths = new HashMap<String, Integer>();
+		
+		while((line=br.readLine())!=null)
+		{
+			StringTokenizer tok = new StringTokenizer(line,"\t");
+			ArrayList<String> list1 = new ArrayList<String>();
+			while(tok.hasMoreTokens())
+			{
+				list1.add(tok.nextToken());
+			}
+			String l = "";
+			for(int k=list1.size()-2;k>=1;k=k-2)
+			{
+				l = l + list1.get(k)+"\t";
+			}
+			if(meta_paths.get(l)!=null)
+			{
+				meta_paths.put(l, meta_paths.get(l)+1);
+			}
+			else
+			{
+				meta_paths.put(l, 1);
+			}
+		}
+		ArrayList<Entry<String, Integer>> aa1 = new ArrayList<Entry<String, Integer>>(meta_paths.entrySet());
+		Collections.sort(aa1,valueComparator);
+		for(Entry<String, Integer> dd:aa1)
+		{
+			bw1.write(dd.getKey()+dd.getValue()+"\n");
+		}
+		bw1.close();
+		
 	}
 	
 	/**
@@ -1471,6 +1585,8 @@ public class Aspect
 		bw4.close();
 	}
 	
+	
+	
 	/**
 	 * adds triples from the knowledge graph represented by this class to kb represented by "kb" if both the entities participating in the triple belong to teknowbase
 	 * @param kb
@@ -1483,14 +1599,18 @@ public class Aspect
 	{
 		GetPropertyValues properties = new GetPropertyValues();
 		HashMap<String, String> hm = properties.getPropValues();
+		Evaluation e = new Evaluation();
+		//e.connect("evaluation", "root", "admin", "tkbforir_evaluation");
+		//e.getPapersForAllQueries(hm.get("query-file"), hm.get("parent-folder"), hm.get("heuristics"));
 		Aspect a = new Aspect();
+		a.generateMetaPathsOfLengthMaster(hm.get("relation"), hm.get("outfile"), hm.get("teknowbase"), hm.get("freebase"), 2, hm.get("teknowbase-relmap"), hm.get("freebase-relmap"), hm.get("teknowbase-nodes"), hm.get("freebase-nodes"));
 		//AdjListCompactOld a1 = a.readGraphEfficient(hm.get("teknowbase"));
 		//DBAdjList d = new DBAdjList("evaluation","tkbforir","123456","tkbforir_evaluation");
 		//a1.addTriplesAnotherKB(hm.get("dbpedia-original"), hm.get("outfile"));
-		a.randomWalkMasterHPC(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"), hm.get("relmap"), hm.get("relation"));
+		//a.randomWalkMasterHPC(hm.get("yago"), hm.get("outfile"), hm.get("parent-folder"), hm.get("yago-relmap"), hm.get("relation"));
 		//a.randomWalkMaster(hm.get("dbpedia"), hm.get("outfile"), hm.get("parent-folder"));
 		//readGraphEfficient(hm.get("dbpedia"));
-		//extractImportantPaths(hm.get("parent-folder"), hm.get("outfile"));
+		//extractImportantPaths1(hm.get("parent-folder"), hm.get("outfile"));
 		//insert_statement(hm.get("freebase-postprocessed"),"freebase_facts");
 		//replaceNullCharcaters(hm.get("freebase"),hm.get("freebase-postprocessed"));
 		//generateMetaPathsOfLengthDatabase(hm.get("relation"), hm.get("outfile"), hm.get("latest-category-graph-no-duplicates"), hm.get("table-name1"), Integer.parseInt(hm.get("length-meta-path")));

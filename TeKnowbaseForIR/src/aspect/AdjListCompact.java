@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -20,6 +21,8 @@ import com.google.common.graph.ValueGraph;
 import com.google.common.graph.ValueGraphBuilder;
 
 import java.io.*;
+
+import preprocess.Edge;
 /**
  * class that represents a graph
  * @author pearl
@@ -32,12 +35,15 @@ public class AdjListCompact
 	ImmutableValueGraph<Integer, ArrayList<Integer>> labeledGraph; // graph stored as ImmutableValueGraph from Guava library
 	HashMap<Integer, Integer> inverses; // maps each relationship to its inverse relationship. Used when the reverse of a given meta-path has to be found
 	HashMap<String, Integer> relmap; // mapping of relationship names to their ids
+	HashMap<Integer, String> relmap1; // mapping of relation id to relation string
 	HashMap<Long, Set<Integer>> pairAdjList; // index on node and edge label pair to the set of nodes reachable by traversing that edge label from the node
 	ImmutableValueGraph<Integer, Integer> pathGraph; // graph where the nodes are the nodes, edges exist between the two nodes if they are related by a meta-path
 	ImmutableValueGraph<Integer, Integer> pathGraph_inverse; // graph representing the transpose of pathGraph
 	public HashMap<Integer, ArrayList<Integer>> pathGraphHashmap;
 	public HashMap<Integer, ArrayList<Integer>> pathGraphHashMapReverse;
 	HashMap<Integer, Set<EndpointPair>> relIndex; // index of the edge label to node pairs that participate in a relation described by the edge label
+	HashMap<Integer, String> nodeMap; // mapping of node id to node name
+	HashMap<String, Integer> nodeMap1;// mapping of node name to node id
 	
 	public AdjListCompact(ImmutableValueGraph<Integer, ArrayList<Integer>> labeledGraph)
 	{
@@ -58,12 +64,57 @@ public class AdjListCompact
 	{
 		this.pairAdjList = p;
 	}
+	
+	/**
+	 * 
+	 * @param r
+	 */
+	
+	public void returnTriplesForEdgeLabel(int r)
+	{
+		HashMap<Integer, Set<EndpointPair>> relIndex = new HashMap<Integer, Set<EndpointPair>>();
+		for(EndpointPair p:this.labeledGraph.edges())
+		{
+			Integer a = (Integer) p.nodeU();
+			Integer b = (Integer) p.nodeV();
+			Optional c1 =  this.labeledGraph.edgeValue(a, b);
+			ArrayList<Integer> c = new ArrayList<Integer>();
+			if(c1.isPresent())
+			{
+				c = (ArrayList<Integer>) c1.get();
+				//if(c.contains(115)) System.out.print("115 is present");
+				//if(c==28) System.out.print("28 is present");
+			}
+			for(Integer cc:c)
+			{
+				if(r==cc)
+				{
+					//System.out.println("contains "+c);
+					if(relIndex.get(cc)==null)
+					{
+						Set<EndpointPair> ss = new HashSet<EndpointPair>();
+						ss.add(p);
+						relIndex.put(cc,ss);
+					}
+					else
+					{
+						Set<EndpointPair> ss = relIndex.get(cc);
+						ss.add(p);
+						relIndex.put(cc,ss);
+					}
+				}
+				
+			}
+			
+		}
+		this.relIndex=relIndex;
+	}
 	/**
 	 * creates index for a pair, the source node and the edge label to the list of outgoing neighbours
 	 * @return
 	 */
 	
-	public HashMap<Long, Set<Integer>> getListOfNeighborsForEdgeLabel(HashSet<Integer> path)
+	public void getListOfNeighborsForEdgeLabel(HashSet<Integer> path)
 	{
 		HashMap<Long, Set<Integer>> h = new HashMap<Long, Set<Integer>>();
 		HashMap<Integer, Set<EndpointPair>> relIndex = new HashMap<Integer, Set<EndpointPair>>();
@@ -118,7 +169,7 @@ public class AdjListCompact
 		System.out.println(relIndex.size());
 		this.pairAdjList = h;
 		this.relIndex = relIndex;
-		return h;
+		
 	}
 	
 	/**
@@ -418,10 +469,10 @@ public class AdjListCompact
 	public void generateRandomWalksLatest(BufferedWriter bw, int walklength, int numwalks) throws Exception
 	{
 		int count=0;
-		System.out.println(pathGraph.nodes().size());
+		System.out.println(pathGraphHashmap.entrySet().size());
 		//HashMap<Integer, ArrayList<ArrayList<Integer>>> randomwalk = new HashMap<Integer, ArrayList<ArrayList<Integer>>>();
 
-		for(int n:pathGraph.nodes())
+		for(int n:pathGraphHashmap.keySet())
 		{
 			if(pathGraphHashmap.get(n)==null) continue;
 			ArrayList<Integer> s = pathGraphHashmap.get(n);
@@ -449,6 +500,58 @@ public class AdjListCompact
 			bw.write(randomwalk.get(n));
 		}
 		
+	}
+	
+	public void findPaths(int u, int v, int k, BufferedWriter bw) throws Exception
+	{
+		LinkedList<Integer> queue = new LinkedList<Integer>();
+		queue.add(u);
+		HashMap<Integer, Integer> pred = new HashMap<Integer, Integer>();
+		int count=0;
+		while(queue.size()>0 && count<=k)
+		{
+			int a=queue.removeFirst();
+			
+			for(int neigh: this.labeledGraph.successors(a))
+			{
+				queue.add(neigh);
+				
+				pred.put(neigh, a);
+				if(count==k && (neigh==v))
+				{
+					
+					Optional<ArrayList<Integer>> o = this.labeledGraph.edgeValue(a, neigh);
+					if(o.isPresent())
+					{
+						for(int j:o.get())
+						{
+							bw.write(this.nodeMap.get(neigh)+"\t"+this.relmap1.get(j)+"\t");
+							int cc = 1;
+							int a1=a;
+							while(pred.get(a1)!=null && cc<k)
+							{
+								int eee = pred.get(a1);
+								Optional<ArrayList<Integer>> o1 = this.labeledGraph.edgeValue(eee, a1);
+								if(o1.isPresent())
+								{
+									for(int j1:o1.get())
+									{
+										bw.write(this.nodeMap.get(a1)+"\t"+this.relmap1.get(j1)+"\t");
+									}
+								}
+								a1=eee;
+								cc++;
+							}
+							
+						}
+					}
+					
+					bw.write(this.nodeMap.get(u)+"\n");
+				}
+			}
+			count++;
+			
+		}
 	}
 	
 	public void writeToFile(String path) throws Exception
