@@ -747,7 +747,7 @@ public class Aspect
 	}
 	
 	/**
-	 * older code to read the graph efficient way to read a graph. Uses Google Guava library to represent the graph compactly
+	 * older code to read the graph efficient way to read a graph. All nodes are string type. Uses Google Guava library to represent the graph compactly
 	 * @param kb
 	 * @return
 	 * @throws Exception
@@ -756,7 +756,7 @@ public class Aspect
 	public static AdjListCompactOld readGraphEfficient(String kb) throws Exception
 	{
 		
-		MutableValueGraph<String, String> weightedGraph = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
+		MutableValueGraph<String, ArrayList<String>> weightedGraph = ValueGraphBuilder.directed().allowsSelfLoops(true).build();
 		
 		BufferedReader br = new BufferedReader(new FileReader(kb));
 		String line;
@@ -770,7 +770,21 @@ public class Aspect
 				tokens.add(tok.nextToken());
 			}
 			if(tokens.size()!=3) continue;
-			weightedGraph.putEdgeValue(tokens.get(0), tokens.get(2), tokens.get(1));
+			String a = tokens.get(0);
+			String b = tokens.get(2);
+			Optional c1 =  weightedGraph.edgeValue(a, b);
+			if(c1.isPresent())
+			{
+				ArrayList<String> c = (ArrayList<String>) c1.get();
+				c.add(tokens.get(1));
+				weightedGraph.putEdgeValue(a, b, c);
+			}
+			else
+			{
+				ArrayList<String> c = new ArrayList<String>();
+				c.add(tokens.get(1));
+				weightedGraph.putEdgeValue(a, b, c);
+			}
 			
 			//tok=null;
 			//tokens=null;
@@ -1437,24 +1451,23 @@ public class Aspect
 	public static void generateMetaPathsOfLengthMaster(String relation, String outfile, String kb1, String kb2, int length, String relmap1, String relmap2, String nodeMap1, String nodeMap2) throws Exception
 	{
 		BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
-		AdjListCompact a1 = readGraphEfficientAlternate(kb1, relmap1, nodeMap1);
+		AdjListCompactOld a1 = readGraphEfficient(kb1);
 		System.out.println("read first graph");
-		AdjListCompact a2 = readGraphEfficientAlternate(kb2, relmap2, nodeMap2);
+		AdjListCompactOld a2 = readGraphEfficient(kb2);
 		System.out.println("read second graph");
-		int r = a1.relmap.get(relation);
-		a1.returnTriplesForEdgeLabel(r);
+		
+		Set<EndpointPair> pair = a1.returnTriplesForEdgeLabel(relation);
 		System.out.println("retrieved pairs for relation");
-		Set<EndpointPair> pair = a1.relIndex.get(r);
+		
 		int c1=0;
 		for(EndpointPair p:pair)
 		{
 			c1++;
-			int u = (int) p.nodeU();
-			int v = (int) p.nodeV();
-			if (a2.nodeMap1.get(a1.nodeMap.get(u))!=null && a2.nodeMap1.get(a1.nodeMap.get(v))!=null)
-			{
-				a2.findPaths(a2.nodeMap1.get(a1.nodeMap.get(u)), a2.nodeMap1.get(a1.nodeMap.get(v)), length, bw);
-			}
+			String u = (String) p.nodeU();
+			String v = (String) p.nodeV();
+			
+				a2.findPaths(u, v, length, bw);
+			
 			System.out.println(c1);
 		}
 		bw.close();
@@ -1585,7 +1598,110 @@ public class Aspect
 		bw4.close();
 	}
 	
+	public static void normalizeVectorsParallel(String embedding, String entityMap) throws Exception
+	{
+		HashMap<String, String> stringToId = LanguageModelEntity.createStringToIdMapping(entityMap);
+		HashMap<String, LanguageModelEntity> emb1 = LanguageModelEntity.readEmbeddingsFromFile(embedding,stringToId);
+		ArrayList<LanguageModelEntity> emb2 = new ArrayList<LanguageModelEntity>();
+		for(String s:emb1.keySet())
+		{
+			emb2.add(emb1.get(s));
+		}
+		int num_threads = Runtime.getRuntime().availableProcessors(); 
+		int nn = emb2.size();
+		ThreadPoolExecutor executor = new ThreadPoolExecutor(num_threads,
+				nn, Long.MAX_VALUE, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(nn));
+		HashSet<Edge> hh = new HashSet<Edge>();
+		for(int i=0;i<emb2.size()-1;i++)
+		{
+			System.out.println(i);
+			TaskNormalize t1 = new TaskNormalize(emb2, i, hh);
+			executor.execute(t1);
+			System.out.println(hh.size());
+		}
+		executor.shutdown();
+		executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+	}
 	
+	/**
+	 * module to normalize the cosine similarity of the embedding vectors
+	 * @param path
+	 * @param entityMap
+	 * @throws Exception
+	 */
+	
+	public static void normalizeVectors(String embedding, String outfile) throws Exception
+	{
+		//HashMap<String, String> stringToId = LanguageModelEntity.createStringToIdMapping(entityMap);
+		HashMap<String, LanguageModelEntity> emb1 = LanguageModelEntity.readEmbeddingsFromFileAlternate(embedding);
+		ArrayList<LanguageModelEntity> emb2 = new ArrayList<LanguageModelEntity>();
+		BufferedWriter bw = new BufferedWriter(new FileWriter(outfile));
+		for(String s:emb1.keySet())
+		{
+			emb2.add(emb1.get(s));
+		}
+		double max=0;
+		double min = 0;
+		for(int i=0;i<emb2.size()-1;i++)
+		{
+			System.out.println(i);
+			LanguageModelEntity s = emb2.get(i);
+			HashMap<String, Double> vector = s.getMixture();
+			for(int j=i+1;j<emb2.size();j++)
+			{
+				LanguageModelEntity s1 = emb2.get(j);
+				double cosine_sim = s.cosineSimilarity(s1);
+				if(cosine_sim<min)
+				{
+					min=cosine_sim;
+				}
+				if(cosine_sim>max)
+				{
+					max=cosine_sim;
+				}
+			}
+			
+		}
+		bw.write(min+"\t"+max+"\n");
+		HashMap<String, Double> summed_probability = new HashMap<String, Double>();
+		for(int i=0;i<emb2.size()-1;i++)
+		{
+			System.out.println(i);
+			LanguageModelEntity s = emb2.get(i);
+			
+			for(int j=i+1;j<emb2.size();j++)
+			{
+				LanguageModelEntity s1 = emb2.get(j);
+				double cosine_sim = s.cosineSimilarity(s1);
+				double norm_cosine_sim = (cosine_sim-min)/(max-min);
+				//bw.write(s.getName()+"\t"+s1.getName()+"\t"+norm_cosine_sim+"\n");
+				if(summed_probability.get(s.getName())!=null)
+	            {
+	                summed_probability.put(s.getName(),summed_probability.get(s.getName()) + norm_cosine_sim);
+	            }
+	            else
+	            {
+	                summed_probability.put(s.getName(), norm_cosine_sim);
+	            }
+	            if(summed_probability.get(s1.getName())!=null)
+	            {
+	                summed_probability.put(s1.getName(),summed_probability.get(s1.getName()) + norm_cosine_sim);
+	            }
+	            else
+	            {
+	                summed_probability.put(s1.getName(), norm_cosine_sim);
+	            }
+			}	
+		}
+		
+		for(String entity:summed_probability.keySet())
+		{
+			bw.write(entity+"\t"+summed_probability.get(entity)+"\n");
+		}
+		
+		bw.close();
+		
+	}
 	
 	/**
 	 * adds triples from the knowledge graph represented by this class to kb represented by "kb" if both the entities participating in the triple belong to teknowbase
@@ -1603,7 +1719,9 @@ public class Aspect
 		//e.connect("evaluation", "root", "admin", "tkbforir_evaluation");
 		//e.getPapersForAllQueries(hm.get("query-file"), hm.get("parent-folder"), hm.get("heuristics"));
 		Aspect a = new Aspect();
-		a.generateMetaPathsOfLengthMaster(hm.get("relation"), hm.get("outfile"), hm.get("teknowbase"), hm.get("freebase"), 2, hm.get("teknowbase-relmap"), hm.get("freebase-relmap"), hm.get("teknowbase-nodes"), hm.get("freebase-nodes"));
+		//normalizeVectorsParallel(hm.get("embedding-application"),hm.get("embeddingEntities"));
+		normalizeVectors(hm.get("embedding-application"), hm.get("outfile"));
+		//a.generateMetaPathsOfLengthMaster(hm.get("relation"), hm.get("outfile"), hm.get("teknowbase"), hm.get("freebase"), 2, hm.get("teknowbase-relmap"), hm.get("freebase-relmap"), hm.get("teknowbase-nodes"), hm.get("freebase-nodes"));
 		//AdjListCompactOld a1 = a.readGraphEfficient(hm.get("teknowbase"));
 		//DBAdjList d = new DBAdjList("evaluation","tkbforir","123456","tkbforir_evaluation");
 		//a1.addTriplesAnotherKB(hm.get("dbpedia-original"), hm.get("outfile"));

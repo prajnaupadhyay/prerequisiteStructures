@@ -115,6 +115,7 @@ public class Evaluation
 			{
 				if(f1.isDirectory())
 				{
+					System.out.println(f1.getAbsolutePath());
 					File ff = new File(f1.getAbsolutePath()+"/"+q);
 					if(ff.exists())
 					{
@@ -127,7 +128,7 @@ public class Evaluation
 							ArrayList<String> tokens = new ArrayList<String>();
 							while(tok.hasMoreTokens())
 							{
-								tokens.add(tok.nextToken());
+								tokens.add(tok.nextToken().replace("<strong>", "").replace("</strong>", ""));
 							}
 							count++;
 							if((count>=1 && count<=5) || (count>=11 && count<=15) || (count>=21 && count<=25) || (count>=31 && count<=35) && (count>=41 && count<=45))
@@ -179,7 +180,7 @@ public class Evaluation
 	 * @throws Exception
 	 */
 	
-	public static void readResults(String queries, String folder, String heuristics, String table_name, String uname, String pwd, String dbname) throws Exception
+	public static void readResults(String queries, String folder, String heuristics, String table_name, String uname, String pwd, String dbname, int k) throws Exception
 	{
 		System.out.println(table_name);
 		//Class.forName("org.postgresql.Driver");
@@ -193,7 +194,6 @@ public class Evaluation
 		if (connection != null) 
 		{
 			System.out.println("DBAdjList has been initialized");
-			
 		}
 		else
 		{
@@ -214,14 +214,52 @@ public class Evaluation
 		{
 			querylist.add(line);
 		}
+		BufferedWriter alg = new BufferedWriter(new FileWriter(folder+"/results/aspect_wise_results/algorithm"));
+		BufferedWriter app = new BufferedWriter(new FileWriter(folder+"/results/aspect_wise_results/application"));
+		BufferedWriter imp = new BufferedWriter(new FileWriter(folder+"/results/aspect_wise_results/implementation"));
+		alg.write("query\t");
+		app.write("query\t");
+		imp.write("query\t");
+		for(String h:heuristiclist)
+		{
+			alg.write(h+"\t");
+			app.write(h+"\t");
+			imp.write(h+"\t");
+		}
+		alg.write("\n");
+		app.write("\n");
+		imp.write("\n");
 		for(String q:querylist)
 		{
+			alg.write(q+"\t");
+			app.write(q+"\t");
+			imp.write(q+"\t");
 			
 			//BufferedWriter bw = new BufferedWriter(new FileWriter(folder+"/all_papers_together_top_5/"+q));
-			evaluate(q, heuristiclist, folder, connection, table_name);
+			evaluate(q, heuristiclist, folder, connection, table_name, alg, app, imp, k);
 			
 		}
-		
+		alg.close();
+		app.close();
+		imp.close();
+		/*BufferedReader alg_reader = new BufferedReader(new FileReader(folder+"/results/aspect_wise_results/algorithm"));
+		BufferedReader app_reader = new BufferedReader(new FileReader(folder+"/results/aspect_wise_results/application"));
+		BufferedReader imp_reader = new BufferedReader(new FileReader(folder+"/results/aspect_wise_results/implementation"));
+		HashMap<String, Double> scores = new HashMap<String, Double>();
+		while((line=alg_reader.readLine())!=null)
+		{
+			StringTokenizer tok = new StringTokenizer(line,"\t");
+			ArrayList<String> tokens = new ArrayList<String>();
+			while(tok.hasMoreTokens())
+			{
+				tokens.add(tok.nextToken());
+				
+			}
+			String a = tokens.get(0);
+			String b = tokens.get(1);
+			Double score = Double.parseDouble(tokens.get(2));
+			scores.put(a+" "+b, score);
+		}*/
 		
 	}
 	
@@ -238,34 +276,69 @@ public class Evaluation
 	 * @throws Exception
 	 */
 	
-	public static void evaluate(String q, ArrayList<String> heuristiclist, String folder, Connection connection, String table_name) throws Exception
+	public static void evaluate(String q, ArrayList<String> heuristiclist, String folder, Connection connection, String table_name, BufferedWriter alg, BufferedWriter app, BufferedWriter imp, int k) throws Exception
 	{
 		BufferedWriter bw1 = new BufferedWriter(new FileWriter(folder+"/results/"+q));
+		
 		for(String h:heuristiclist)
 		{
 			File f = new File(folder+"/"+h);
 			for(File f1:f.listFiles())
 			{
+				double sum=0;
+				///ArrayList<Double> i = query(q, f1, folder, connection, table_name, k);
+				HashMap<String, Double> aspectScore = query(q, f1, folder, connection, table_name, k);
 				if(f1.isDirectory())
 				{
-					
-					ArrayList<Integer> i = query(q, f1, folder, connection, table_name);
-					double sum=0;
-					for(int ii:i)
+					 
+					/*for(double ii:i)
 					{
 						sum = sum + ii;
+					}*/
+					for(String suggestion:aspectScore.keySet())
+					{
+						sum = sum + aspectScore.get(suggestion);
+						if(f1.getName().equals("algorithm"))
+						{
+							bw1.write(h+"\t"+f1.getName()+"\t"+suggestion+"\t"+aspectScore.get(suggestion)/(3)+"\n");
+						}
+						else if(f1.getName().equals("application"))
+						{
+							bw1.write(h+"\t"+f1.getName()+"\t"+suggestion+"\t"+aspectScore.get(suggestion)/(2)+"\n");
+						}
+						else if(f1.getName().equals("implementation"))
+						{
+							bw1.write(h+"\t"+f1.getName()+"\t"+suggestion+"\t"+aspectScore.get(suggestion)/(2)+"\n");
+							
+						}
+						
+						
 					}
+					
 					if(f1.getName().equals("algorithm"))
-						bw1.write(h+"\t"+f1.getName()+"\t"+sum/(i.size()*3)+"\n");
+					{
+						alg.write(sum/(aspectScore.size()*3)+"\t");
+					}
 					else if(f1.getName().equals("application"))
-						bw1.write(h+"\t"+f1.getName()+"\t"+sum/(i.size()*2)+"\n");
+					{
+						app.write(sum/(aspectScore.size()*2)+"\t");
+					}
 					else if(f1.getName().equals("implementation"))
-						bw1.write(h+"\t"+f1.getName()+"\t"+sum/(i.size()*2)+"\n");
+					{
+						imp.write(sum/(aspectScore.size()*2)+"\t");
+					}
+					
 					
 				}
+				
+				
 			}
 		}
+		alg.write("\n");
+		app.write("\n");
+		imp.write("\n");
 		bw1.close();
+		
 	}
 	
 	/**
@@ -283,10 +356,11 @@ public class Evaluation
 	 * @throws Exception
 	 */
 	
-	public static ArrayList<Integer> query(String q, File aspect, String folder, Connection connection, String table_name) throws Exception
+	public static HashMap<String, Double> query(String q, File aspect, String folder, Connection connection, String table_name, int k) throws Exception
 	{
 		File ff = new File(aspect.getAbsolutePath()+"/"+q);
-		ArrayList<Integer> i = new ArrayList<Integer>();
+		ArrayList<Double> i = new ArrayList<Double>();
+		HashMap<String, Double> aspectScore = new HashMap<String, Double>();
 		if(ff.exists())
 		{
 			BufferedReader br = new BufferedReader(new FileReader(aspect.getAbsolutePath()+"/"+q));
@@ -302,32 +376,60 @@ public class Evaluation
 					tokens.add(tok.nextToken());
 				}
 				count++;
-				if((count>=1 && count<=5) || (count>=11 && count<=15) || (count>=21 && count<=25) || (count>=31 && count<=35) && (count>=41 && count<=45))
+				if((count>=1 && count<=k) || (count>=11 && count<=k+10) || (count>=21 && count<=k+20) || (count>=31 && count<=k+30) || (count>=41 && count<=k+40))
 				{
+					if(q.equals("bloom_filter") && aspect.getName().equals("algorithm") && aspect.getAbsolutePath().contains("dbpedia"))
+					{
+						System.out.println(tokens.get(0));
+					}
 					//paperlist.put(tokens.get(1), tokens.get(2));
-					String a = tokens.get(1);
+					String suggestion = tokens.get(0);
+					String a = tokens.get(1).replace("<strong>", "").replace("</strong>", "");
 					String b = tokens.get(2);
-					String sql1 = "select eval from "+table_name+" where query=? and paper=? and aspect=?";
+					String sql1 = "select eval from "+table_name+" where query=? and paper=? and aspect=? and valid='y'";
+					
 					PreparedStatement statement1 = connection.prepareStatement(sql1);
 					statement1.setString(1, q);
 					statement1.setString(2, a);
 					statement1.setString(3, aspect.getName());
+					
 					ResultSet rs1 = statement1.executeQuery();
 					int val=0;
 					int count1=0;
+					double avg1=0;
 					while(rs1.next())
 					{
 						count1++;
 						val=rs1.getInt(1);
-						i.add(val);
-						break;
+						avg1 = avg1 + val;
+						//i.add(val);
+						//break;
 					}
-					if(count1==0 && q.equals("minimum_spanning_tree")) System.out.println(a);
+					
+					/*if(count1==0 && q.equals("minimum_spanning_tree")) 
+					{
+						System.out.println(a);
+						System.out.println(statement1.toString());
+					}*/
+					if(count1>0)
+					{
+						avg1 = avg1/count1;
+					}
+					i.add(avg1);
+					if(aspectScore.get(suggestion)==null) aspectScore.put(suggestion, avg1);
+					else aspectScore.put(suggestion, avg1 + aspectScore.get(suggestion));
 				}
 				
+				
 			}
+			for(String suggestion:aspectScore.keySet())
+			{
+				aspectScore.put(suggestion, aspectScore.get(suggestion)/k);
+			}
+			//System.out.println(aspectScore.size());
+			
 		}
-		return i;
+		return aspectScore;
 	}
 	
 	
@@ -337,7 +439,7 @@ public class Evaluation
 		HashMap<String, String> hm = properties.getPropValues();
 		System.out.println("hiiiii");
 		//connect("evaluation", "root", "admin", "tkbforir_evaluation");
-		readResults(hm.get("query-file"), hm.get("parent-folder"), hm.get("heuristics"), "evaluation", "root", "admin", "tkbforir_evaluation");
+		readResults(hm.get("query-file"), hm.get("parent-folder"), hm.get("heuristics"), "evaluation", "root", "admin", "tkbforir_evaluation", Integer.parseInt(hm.get("top_k")));
 	}
 	
 }

@@ -34,10 +34,10 @@ public class AdjListCompactOld {
 	 * @param args
 	 * 
 	 */
-	MutableValueGraph<String, String> labeledGraph;
+	MutableValueGraph<String, ArrayList<String>> labeledGraph;
 	
 	
-	public AdjListCompactOld(MutableValueGraph<String, String> labeledGraph)
+	public AdjListCompactOld(MutableValueGraph<String, ArrayList<String>> labeledGraph)
 	{
 		this.labeledGraph = labeledGraph;
 	}
@@ -408,44 +408,87 @@ public class AdjListCompactOld {
 		bw.close();
 	}
 	
-	public void returnTriplesForEdgeLabel(String r)
+	public Set<EndpointPair> returnTriplesForEdgeLabel(String r)
 	{
-		HashMap<Integer, Set<EndpointPair>> relIndex = new HashMap<Integer, Set<EndpointPair>>();
+		Set<EndpointPair> ss = new HashSet<EndpointPair>();
 		for(EndpointPair p:this.labeledGraph.edges())
 		{
-			Integer a = (Integer) p.nodeU();
-			Integer b = (Integer) p.nodeV();
+			String a = (String) p.nodeU();
+			String b = (String) p.nodeV();
 			Optional c1 =  this.labeledGraph.edgeValue(a, b);
-			ArrayList<Integer> c = new ArrayList<Integer>();
+			ArrayList<String> c = new ArrayList<String>();
 			if(c1.isPresent())
 			{
-				c = (ArrayList<Integer>) c1.get();
+				c = (ArrayList<String>) c1.get();
 				//if(c.contains(115)) System.out.print("115 is present");
 				//if(c==28) System.out.print("28 is present");
 			}
-			for(Integer cc:c)
+			
+			for(String cc:c)
 			{
-				if(r==cc)
+				if(r.equals(cc))
 				{
-					//System.out.println("contains "+c);
-					if(relIndex.get(cc)==null)
-					{
-						Set<EndpointPair> ss = new HashSet<EndpointPair>();
+				
 						ss.add(p);
-						relIndex.put(cc,ss);
-					}
-					else
-					{
-						Set<EndpointPair> ss = relIndex.get(cc);
-						ss.add(p);
-						relIndex.put(cc,ss);
-					}
 				}
 				
 			}
 			
 		}
-		this.relIndex=relIndex;
+		return ss;
+	}
+	
+	public void findPaths(String u, String v, int k, BufferedWriter bw) throws Exception
+	{
+		LinkedList<String> queue = new LinkedList<String>();
+		queue.add(u);
+		HashMap<String, String> pred = new HashMap<String, String>();
+		int count=0;
+		while(queue.size()>0 && count<=k)
+		{
+			String a=queue.removeFirst();
+			
+			for(String neigh: this.labeledGraph.successors(a))
+			{
+				//System.out.println("has successors");
+				queue.add(neigh);
+				
+				pred.put(neigh, a);
+				if(count==k && (neigh==v))
+				{
+					
+					Optional<ArrayList<String>> o = this.labeledGraph.edgeValue(a, neigh);
+					if(o.isPresent())
+					{
+						for(String j:o.get())
+						{
+							bw.write(neigh+"\t"+j+"\t");
+							int cc = 1;
+							String a1=a;
+							while(pred.get(a1)!=null && cc<k)
+							{
+								String eee = pred.get(a1);
+								Optional<ArrayList<String>> o1 = this.labeledGraph.edgeValue(eee, a1);
+								if(o1.isPresent())
+								{
+									for(String j1:o1.get())
+									{
+										bw.write(a1+"\t"+j1+"\t");
+									}
+								}
+								a1=eee;
+								cc++;
+							}
+							
+						}
+					}
+					
+					bw.write(u+"\n");
+				}
+			}
+			count++;
+			
+		}
 	}
 	
 	
